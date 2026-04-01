@@ -33,13 +33,14 @@ export default function CompteRenduForm({ initialCR, onSaved }: Props) {
   const [corps, setCorps] = useState<CorpsSection[]>(initialCR?.corps ?? [])
   const [annexes, setAnnexes] = useState<Fichier[]>(initialCR?.annexes ?? [])
   const [message, setMessage] = useState("")
+  const [erreurFichier, setErreurFichier] = useState("")
 
   const dateObj = new Date(date + "T12:00:00")
   const mois = dateObj.getMonth() + 1
   const annee = dateObj.getFullYear()
 
   const canSaveDraft = currentUser?.role === "maire" || currentUser?.role === "adjoint"
-  const canValidate = currentUser?.role === "maire" || currentUser?.role === "adjoint"
+  const canValidate = currentUser?.role === "maire"
 
   function togglePresent(nom: string) {
     if (presents.includes(nom)) {
@@ -98,15 +99,29 @@ export default function CompteRenduForm({ initialCR, onSaved }: Props) {
   }
 
   const FORMATS_ACCEPTES = [".doc", ".docx", ".pdf", ".xls", ".xlsx"]
+  const TAILLE_MAX: Record<string, number> = {
+    ".pdf": 20 * 1024 * 1024,
+    ".doc": 10 * 1024 * 1024,
+    ".docx": 10 * 1024 * 1024,
+    ".xls": 10 * 1024 * 1024,
+    ".xlsx": 10 * 1024 * 1024,
+  }
 
   async function handleAjouterAnnexes(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return
     const files = Array.from(e.target.files)
+    setErreurFichier("")
 
     for (const f of files) {
       const ext = "." + (f.name.split(".").pop()?.toLowerCase() ?? "")
       if (!FORMATS_ACCEPTES.includes(ext)) {
-        setMessage("Format non accepté. Veuillez utiliser un fichier Word, PDF ou Excel uniquement.")
+        setErreurFichier("Format non accepté.\nFormats autorisés : PDF, Word (.docx), Excel (.xlsx)")
+        e.target.value = ""
+        return
+      }
+      const tailleMax = TAILLE_MAX[ext]
+      if (tailleMax && f.size > tailleMax) {
+        setErreurFichier("Fichier trop volumineux.\nTaille maximale : PDF 20 Mo, Word 10 Mo, Excel 10 Mo")
         e.target.value = ""
         return
       }
@@ -123,8 +138,8 @@ export default function CompteRenduForm({ initialCR, onSaved }: Props) {
           taille: f.size,
           ...result,
         }])
-      } catch {
-        setMessage(`Impossible d'envoyer ${f.name}`)
+      } catch (err) {
+        setMessage(`Erreur: ${err instanceof Error ? err.message : String(err)}`)
       }
     }
   }
@@ -421,8 +436,11 @@ export default function CompteRenduForm({ initialCR, onSaved }: Props) {
                 className="hidden"
               />
             </label>
-            <p className="mt-1.5 text-xs text-gray-400">Formats acceptés : PDF, Word (.docx), Excel (.xlsx)</p>
+            <p className="mt-1.5 text-xs text-gray-400">Formats : PDF (20 Mo max), Word (10 Mo max), Excel (10 Mo max)</p>
           </div>
+          {erreurFichier && (
+            <p className="text-sm text-[#B4432E]" style={{ whiteSpace: "pre-line" }}>{erreurFichier}</p>
+          )}
           {annexes.length === 0 && (
             <p className="text-xs text-gray-400">Aucune annexe ajoutée</p>
           )}

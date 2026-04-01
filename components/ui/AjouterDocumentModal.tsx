@@ -11,6 +11,13 @@ const MOIS_FR = [
   "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
 ]
 const FORMATS_ACCEPTES = [".doc", ".docx", ".pdf", ".xls", ".xlsx"]
+const TAILLE_MAX: Record<string, number> = {
+  ".pdf": 20 * 1024 * 1024,
+  ".doc": 10 * 1024 * 1024,
+  ".docx": 10 * 1024 * 1024,
+  ".xls": 10 * 1024 * 1024,
+  ".xlsx": 10 * 1024 * 1024,
+}
 
 interface Props {
   onClose: () => void
@@ -40,7 +47,14 @@ export default function AjouterDocumentModal({ onClose, commissionId, annee, moi
       for (const file of Array.from(files)) {
         const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "")
         if (!FORMATS_ACCEPTES.includes(ext)) {
-          setErreur("Format non accepté. Veuillez utiliser un fichier Word, PDF ou Excel uniquement.")
+          setErreur("Format non accepté.\nFormats autorisés : PDF, Word (.docx), Excel (.xlsx)")
+          e.target.value = ""
+          setFichiers(null)
+          return
+        }
+        const tailleMax = TAILLE_MAX[ext]
+        if (tailleMax && file.size > tailleMax) {
+          setErreur("Fichier trop volumineux.\nTaille maximale : PDF 20 Mo, Word 10 Mo, Excel 10 Mo")
           e.target.value = ""
           setFichiers(null)
           return
@@ -92,6 +106,22 @@ export default function AjouterDocumentModal({ onClose, commissionId, annee, moi
     }
 
     ajouterDocument(newDoc)
+
+    // Notification email (best-effort, sans bloquer la fermeture)
+    const commission = commissions.find(c => c.id === selectedCommission)
+    console.log("Appel notify...")
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "document",
+        titre: newDoc.titre,
+        commission: commission?.nom ?? "",
+        date: newDoc.date,
+        auteur: newDoc.auteur,
+      }),
+    }).catch(console.error)
+
     onSuccess?.(selectedYear, selectedMois)
     onClose()
   }
@@ -180,7 +210,7 @@ export default function AjouterDocumentModal({ onClose, commissionId, annee, moi
               onChange={handleFichiersChange}
               className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#B4432E]/10 file:text-[#B4432E] hover:file:bg-[#B4432E]/20"
             />
-            <p className="mt-1.5 text-xs text-gray-400">Formats acceptés : PDF, Word (.docx), Excel (.xlsx)</p>
+            <p className="mt-1.5 text-xs text-gray-400">Formats : PDF (20 Mo max), Word (10 Mo max), Excel (10 Mo max)</p>
           </div>
 
           {/* Barre de progression */}
@@ -198,7 +228,7 @@ export default function AjouterDocumentModal({ onClose, commissionId, annee, moi
             </div>
           )}
 
-          {erreur && <p className="text-sm text-[#B4432E]">{erreur}</p>}
+          {erreur && <p className="text-sm text-[#B4432E]" style={{ whiteSpace: "pre-line" }}>{erreur}</p>}
 
           <div className="flex justify-end gap-3 pt-2">
             <button

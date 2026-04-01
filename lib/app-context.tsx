@@ -1,8 +1,9 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { onSnapshot, collection } from "firebase/firestore"
 import { db } from "@/lib/firebase/config"
-import type { Commission, Document, User, Reunion, AccesCommissions, DroitsSuppression, NiveauSuppression } from "@/types"
+import type { Commission, Document, User, Reunion, AccesCommissions, DroitsSuppression, NiveauSuppression, Absence } from "@/types"
 import {
   getCommissions,
   getUsers,
@@ -13,9 +14,12 @@ import {
   restaurerDocumentFirestore,
   updateUser as firestoreUpdateUser,
   deleteUser as firestoreDeleteUser,
-  getReunions,
   addReunion as firestoreAddReunion,
   deleteReunion as firestoreDeleteReunion,
+  updateReunionPresences,
+  getAbsences,
+  addAbsence as firestoreAddAbsence,
+  deleteAbsence as firestoreDeleteAbsence,
   getAcces,
   saveAcces,
 } from "@/lib/firebase/firestore"
@@ -49,6 +53,10 @@ interface AppContextType {
   reunions: Reunion[]
   ajouterReunion: (reunion: Reunion) => void
   supprimerReunion: (id: string) => void
+  marquerPresence: (reunionId: string, statut: "present" | "absent") => void
+  absences: Absence[]
+  ajouterAbsence: (absence: Absence) => void
+  supprimerAbsence: (id: string) => void
   accesCommissions: AccesCommissions
   setAccesCommissions: (acces: AccesCommissions) => void
   aCommissionAcces: (commissionId: string) => boolean
@@ -70,6 +78,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [documents, setDocuments] = useState<Document[]>([])
   const [corbeilleDocuments, setCorbeilleDocuments] = useState<Document[]>([])
   const [reunions, setReunions] = useState<Reunion[]>([])
+  const [absences, setAbsences] = useState<Absence[]>([])
   const [accesCommissions, setAccesCommissionsState] = useState<AccesCommissions>({})
   const [droitsSuppression, setDroitsSuppression] = useState<DroitsSuppression>({})
   const [loading, setLoading] = useState(true)
@@ -79,26 +88,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Effect 1 : données statiques (commissions, users, réunions, accès)
   useEffect(() => {
     async function chargerDonnees() {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout Firebase (5s)")), 5000)
+      )
+
       try {
         setLoading(true)
         setLoadingMessage("Connexion à Firebase…")
-        const commissionsData = await getCommissions()
+        const commissionsData = await Promise.race([getCommissions(), timeout])
         setLoadingMessage("Chargement des données…")
 
-        const [usersData, reunionsData, acces, docsData] = await Promise.all([
-          getUsers(),
-          getReunions(),
-          getAcces(),
-          getDocuments(),
+        const [usersData, acces, docsData, absencesData] = await Promise.race([
+          Promise.all([getUsers(), getAcces(), getDocuments(), getAbsences()]),
+          timeout,
         ])
 
         setCommissions(commissionsData.sort((a, b) => Number(a.id) - Number(b.id)))
         setUsers(usersData)
         setDroitsSuppression(getDroitsDefaut(usersData))
-        setReunions(reunionsData)
         setAccesCommissionsState(acces)
         setDocuments(docsData.filter(d => !d.dateMiseCorbeille))
         setCorbeilleDocuments(docsData.filter(d => !!d.dateMiseCorbeille))
+        setAbsences(absencesData)
         const userId = typeof window !== "undefined" ? localStorage.getItem("bvap_user_id") : null
         const found = userId ? usersData.find(u => u.id === userId) : null
         setCurrentUser(found ?? usersData[0] ?? null)
@@ -113,11 +124,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     chargerDonnees()
   }, [])
 
+  // Écoute temps réel des réunions (présences mises à jour en direct)
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "reunions"), snap => {
+      setReunions(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Reunion))
+    })
+    return () => unsubscribe()
+  }, [])
+
 
   function aCommissionAcces(commissionId: string): boolean {
-    // Commission 20 "Réunion Maire et Adjoints" réservée aux rôles maire/adjoint
+    // Commission 20 "Réunion Maire et Adjoints" réservée aux rôles maire/adjoint/secrétaire
     if (commissionId === "20") {
-      return currentUser?.role === "maire" || currentUser?.role === "adjoint"
+      return currentUser?.role === "maire" || currentUser?.role === "adjoint" || currentUser?.role === "secretaire"
     }
     const liste = accesCommissions[commissionId]
     if (!liste) return true
@@ -132,6 +151,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function peutSupprimer(niveau: "document" | "mois" | "annee" | "commission"): boolean {
     if (!currentUser) return false
+    if (currentUser.role === "conseiller") return false
     const droits: NiveauSuppression = droitsSuppression[currentUser.id] ?? "aucun"
     if (droits === "aucun") return false
     if (droits === "documents_mois") return niveau === "document" || niveau === "mois"
@@ -191,13 +211,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   function ajouterReunion(reunion: Reunion) {
-    setReunions(prev => [...prev, reunion])
     firestoreAddReunion(reunion).catch(console.error)
+    // onSnapshot met à jour l'état automatiquement
   }
 
   function supprimerReunion(id: string) {
-    setReunions(prev => prev.filter(r => r.id !== id))
     firestoreDeleteReunion(id).catch(console.error)
+    // onSnapshot met à jour l'état automatiquement
+  }
+
+  function marquerPresence(reunionId: string, statut: "present" | "absent") {
+    if (!currentUser) return
+    const reunion = reunions.find(r => r.id === reunionId)
+    const updatedPresences = { ...(reunion?.presences ?? {}), [currentUser.id]: statut }
+    updateReunionPresences(reunionId, updatedPresences).catch(console.error)
+    // onSnapshot met à jour l'état automatiquement
+  }
+
+  function ajouterAbsence(absence: Absence) {
+    setAbsences(prev => [...prev, absence])
+    firestoreAddAbsence(absence).catch(console.error)
+  }
+
+  function supprimerAbsence(id: string) {
+    setAbsences(prev => prev.filter(a => a.id !== id))
+    firestoreDeleteAbsence(id).catch(console.error)
   }
 
   function setAccesCommissions(acces: AccesCommissions) {
@@ -244,6 +282,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       reunions,
       ajouterReunion,
       supprimerReunion,
+      marquerPresence,
+      absences,
+      ajouterAbsence,
+      supprimerAbsence,
       accesCommissions,
       setAccesCommissions,
       aCommissionAcces,

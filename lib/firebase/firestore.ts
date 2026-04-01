@@ -9,7 +9,7 @@ import {
   getDoc,
 } from "firebase/firestore"
 import { db } from "./config"
-import type { Commission, Document, User, CompteRendu, Reunion, AccesCommissions } from "@/types"
+import type { Commission, Document, User, CompteRendu, Reunion, AccesCommissions, Absence } from "@/types"
 import { USERS_AUTH } from "@/lib/auth-data"
 
 // ── COMMISSIONS ──────────────────────────────────────────────────────────────
@@ -35,6 +35,7 @@ const COMMISSIONS_INITIALES: Array<{ id: string; nom: string }> = [
   { id: "18", nom: "Solidarité — Entraide" },
   { id: "19", nom: "Cadre de vie et économie" },
   { id: "20", nom: "Réunion Maire et Adjoints" },
+  { id: "21", nom: "🏛️ Conseil Municipal" },
 ]
 
 export async function getCommissions(): Promise<Commission[]> {
@@ -138,6 +139,12 @@ export async function supprimerCompteRenduFirestore(id: string): Promise<void> {
   await deleteDoc(firestoreDoc(db, "comptes_rendus", id))
 }
 
+export async function getCompteRenduById(id: string): Promise<CompteRendu | null> {
+  const snap = await getDoc(firestoreDoc(db, "comptes_rendus", id))
+  if (!snap.exists()) return null
+  return { id: snap.id, ...snap.data() } as CompteRendu
+}
+
 // ── RÉUNIONS ──────────────────────────────────────────────────────────────────
 
 export async function getReunions(): Promise<Reunion[]> {
@@ -152,6 +159,26 @@ export async function addReunion(reunion: Reunion): Promise<void> {
 
 export async function deleteReunion(id: string): Promise<void> {
   await deleteDoc(firestoreDoc(db, "reunions", id))
+}
+
+export async function updateReunionPresences(id: string, presences: Record<string, "present" | "absent">): Promise<void> {
+  await updateDoc(firestoreDoc(db, "reunions", id), { presences })
+}
+
+// ── ABSENCES ──────────────────────────────────────────────────────────────────
+
+export async function getAbsences(): Promise<Absence[]> {
+  const snap = await getDocs(collection(db, "absences"))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }) as Absence)
+}
+
+export async function addAbsence(absence: Absence): Promise<void> {
+  const { id, ...data } = absence
+  await setDoc(firestoreDoc(db, "absences", id), data)
+}
+
+export async function deleteAbsence(id: string): Promise<void> {
+  await deleteDoc(firestoreDoc(db, "absences", id))
 }
 
 // ── ACCÈS AUX COMMISSIONS ─────────────────────────────────────────────────────

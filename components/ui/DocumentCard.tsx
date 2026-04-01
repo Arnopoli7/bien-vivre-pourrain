@@ -7,6 +7,8 @@ import type { Document, Fichier } from "@/types"
 import { useApp } from "@/lib/app-context"
 import { formatDate, formatFileSize, getFileColorClass } from "@/lib/utils"
 import BoutonTelechargement, { telechargerFichier } from "@/components/ui/BoutonTelechargement"
+import { getCompteRenduById } from "@/lib/firebase/firestore"
+import { telechargerCompteRenduPDF } from "@/lib/generer-pdf-cr"
 
 const YEARS = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
 const MOIS_FR = [
@@ -165,14 +167,30 @@ function ConfirmCorbeilleModal({ titre, onConfirm, onCancel }: {
 }
 
 export default function DocumentCard({ document, showCommission = true }: DocumentCardProps) {
-  const { commissions, modifierDocument, mettreALaCorbeille, peutSupprimer } = useApp()
+  const { currentUser, commissions, modifierDocument, mettreALaCorbeille, peutSupprimer } = useApp()
   const commission = commissions.find(c => c.id === document.commissionId)
   const [editOuvert, setEditOuvert] = useState(false)
   const [corbeilleOuvert, setCorbeilleOuvert] = useState(false)
 
   const peutSupprimerDoc = peutSupprimer("document")
+  const canWrite = currentUser?.role === "maire" || currentUser?.role === "adjoint" || currentUser?.role === "secretaire"
   const isCompteRendu = document.type === "compte_rendu"
   const crId = isCompteRendu ? document.id.replace("doc-cr-", "") : null
+  const [pdfEnCours, setPdfEnCours] = useState(false)
+
+  async function handleTelechargerPDF() {
+    if (!crId) return
+    setPdfEnCours(true)
+    try {
+      const cr = await getCompteRenduById(crId)
+      if (!cr) return
+      await telechargerCompteRenduPDF(cr, commission?.nom ?? "Commission")
+    } catch (err) {
+      console.error("Erreur génération PDF :", err)
+    } finally {
+      setPdfEnCours(false)
+    }
+  }
 
   function handleCorbeille() {
     mettreALaCorbeille([document.id])
@@ -235,20 +253,32 @@ export default function DocumentCard({ document, showCommission = true }: Docume
         <td className="py-3 px-4">
           <div className="flex items-center gap-1">
             {isCompteRendu ? (
-              <Link
-                href={`/notes/${crId}`}
-                className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
-              >
-                Consulter
-              </Link>
+              <>
+                <Link
+                  href={`/notes/${crId}`}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors"
+                >
+                  Consulter
+                </Link>
+                <button
+                  onClick={handleTelechargerPDF}
+                  disabled={pdfEnCours}
+                  title="Télécharger le PDF"
+                  className="text-xs px-3 py-1.5 rounded-lg bg-[#B4432E]/10 hover:bg-[#B4432E]/20 text-[#B4432E] font-medium transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center gap-1"
+                >
+                  {pdfEnCours ? "…" : "⬇ PDF"}
+                </button>
+              </>
             ) : (
               <>
                 <BoutonTelechargement onTelecharger={handleTelechargerTous} />
-                <button
-                  onClick={() => setEditOuvert(true)}
-                  className="p-1.5 text-gray-400 hover:text-[#B4432E] hover:bg-[#FAF8F5] rounded-lg transition-colors"
-                  title="Modifier"
-                >✏️</button>
+                {canWrite && (
+                  <button
+                    onClick={() => setEditOuvert(true)}
+                    className="p-1.5 text-gray-400 hover:text-[#B4432E] hover:bg-[#FAF8F5] rounded-lg transition-colors"
+                    title="Modifier"
+                  >✏️</button>
+                )}
               </>
             )}
             {peutSupprimerDoc && (

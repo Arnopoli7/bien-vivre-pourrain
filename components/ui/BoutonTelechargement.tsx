@@ -5,7 +5,13 @@ import { lireFichier, telechargerDepuisBase64 } from "@/lib/fichier-storage"
 
 export function telechargerFichier(f: Fichier) {
   if (f.url) {
-    window.open(f.url, "_blank")
+    const a = document.createElement('a')
+    a.href = f.url
+    a.download = f.nom || 'document'
+    a.target = '_blank'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
     return
   }
   if (f.storageKey) {

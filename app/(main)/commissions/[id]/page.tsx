@@ -27,7 +27,7 @@ export default function CommissionDetailPage({ params }: PageProps) {
   const peutSupprimerMois = peutSupprimer("mois")
   const peutSupprimerAnnee = peutSupprimer("annee")
 
-  const canWrite = currentUser?.role === "maire" || currentUser?.role === "adjoint"
+  const canWrite = currentUser?.role === "maire" || currentUser?.role === "adjoint" || currentUser?.role === "secretaire"
 
   const docsCommission = documents.filter(d => d.commissionId === params.id)
   const docsAnnee = docsCommission.filter(d => d.annee === selectedYear)
@@ -178,6 +178,7 @@ export default function CommissionDetailPage({ params }: PageProps) {
               </p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
@@ -193,6 +194,7 @@ export default function CommissionDetailPage({ params }: PageProps) {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

@@ -10,6 +10,7 @@ import CompteRenduForm from "@/components/ui/CompteRenduForm"
 import type { CompteRendu, Fichier } from "@/types"
 import { formatFileSize, getFileColorClass } from "@/lib/utils"
 import BoutonTelechargement from "@/components/ui/BoutonTelechargement"
+import { telechargerCompteRenduPDF } from "@/lib/generer-pdf-cr"
 
 const MOIS_FR = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -22,8 +23,9 @@ interface PageProps {
 
 export default function CompteRenduDetailPage({ params }: PageProps) {
   const router = useRouter()
-  const { commissions } = useApp()
+  const { commissions, currentUser, aCommissionAcces } = useApp()
   const [cr, setCr] = useState<CompteRendu | null | "loading">("loading")
+  const [pdfEnCours, setPdfEnCours] = useState(false)
 
   useEffect(() => {
     lireComptesRendus().then(all => {
@@ -52,7 +54,36 @@ export default function CompteRenduDetailPage({ params }: PageProps) {
     )
   }
 
+  // ── Accès refusé si la commission est inaccessible ───────────────────────
+  if (!aCommissionAcces(cr.commissionId)) {
+    return (
+      <div className="max-w-4xl mx-auto py-20 text-center space-y-4">
+        <p className="text-4xl">🔒</p>
+        <p className="text-gray-500 text-sm">Vous n'avez pas accès à ce compte rendu.</p>
+        <Link href="/commissions" className="text-sm text-[#B4432E] underline">
+          Retour aux commissions
+        </Link>
+      </div>
+    )
+  }
+
   // ── BROUILLON : formulaire éditable ──────────────────────────────────────
+  const canEdit =
+    currentUser?.role === "maire" ||
+    (currentUser?.role === "adjoint" && cr.redacteur === currentUser?.nom)
+
+  if (cr.statut === "brouillon" && !canEdit) {
+    return (
+      <div className="max-w-4xl mx-auto py-20 text-center space-y-4">
+        <p className="text-4xl">🔒</p>
+        <p className="text-gray-500 text-sm">Vous ne pouvez pas modifier ce compte rendu.</p>
+        <Link href="/notes" className="text-sm text-[#B4432E] underline">
+          Retour à la liste
+        </Link>
+      </div>
+    )
+  }
+
   if (cr.statut === "brouillon") {
     return (
       <div className="max-w-4xl mx-auto space-y-4">
@@ -81,6 +112,17 @@ export default function CompteRenduDetailPage({ params }: PageProps) {
   // ── VALIDÉ : lecture seule format A4 ─────────────────────────────────────
   const commission = commissions.find(c => c.id === cr.commissionId)
   const periode = `${MOIS_FR[cr.mois - 1]} ${cr.annee}`
+
+  async function handleTelechargerPDF() {
+    setPdfEnCours(true)
+    try {
+      await telechargerCompteRenduPDF(cr as CompteRendu, commission?.nom ?? "Commission")
+    } catch (err) {
+      console.error("Erreur génération PDF :", err)
+    } finally {
+      setPdfEnCours(false)
+    }
+  }
   const dateReunion = new Date(cr.date + "T12:00:00").toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   })
@@ -148,12 +190,21 @@ export default function CompteRenduDetailPage({ params }: PageProps) {
               {cr.titre ?? "Sans titre"}
             </h1>
           </div>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-700 rounded-xl transition-colors shrink-0 ml-3"
-          >
-            🖨️ Imprimer
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-3">
+            <button
+              onClick={handleTelechargerPDF}
+              disabled={pdfEnCours}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#B4432E]/10 hover:bg-[#B4432E]/20 text-sm font-medium text-[#B4432E] rounded-xl transition-colors disabled:opacity-50 disabled:cursor-wait"
+            >
+              {pdfEnCours ? "…" : "⬇ PDF"}
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-sm font-medium text-gray-700 rounded-xl transition-colors"
+            >
+              🖨️ Imprimer
+            </button>
+          </div>
         </div>
 
         {/* Zone grisée simulant le bureau */}

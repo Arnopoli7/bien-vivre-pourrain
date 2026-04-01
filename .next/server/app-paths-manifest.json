@@ -1,7 +1,20 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/(main)/notes/page": "app/(main)/notes/page.js",
-  "/(main)/notes/nouveau/page": "app/(main)/notes/nouveau/page.js",
+  "/api/notify/route": "app/api/notify/route.js",
+  "/page": "app/page.js",
+  "/api/generate-compte-rendu/route": "app/api/generate-compte-rendu/route.js",
+  "/(main)/admin/page": "app/(main)/admin/page.js",
   "/(auth)/login/page": "app/(auth)/login/page.js",
-  "/(main)/dashboard/page": "app/(main)/dashboard/page.js"
+  "/(main)/calendrier/page": "app/(main)/calendrier/page.js",
+  "/(main)/corbeille/page": "app/(main)/corbeille/page.js",
+  "/(main)/commissions/[id]/page": "app/(main)/commissions/[id]/page.js",
+  "/(main)/documents/page": "app/(main)/documents/page.js",
+  "/(main)/commissions/page": "app/(main)/commissions/page.js",
+  "/(main)/dashboard/page": "app/(main)/dashboard/page.js",
+  "/(main)/infos-elus/page": "app/(main)/infos-elus/page.js",
+  "/(main)/notes/page": "app/(main)/notes/page.js",
+  "/(main)/notes/[id]/page": "app/(main)/notes/[id]/page.js",
+  "/(main)/notes/nouveau/page": "app/(main)/notes/nouveau/page.js",
+  "/(main)/search/page": "app/(main)/search/page.js",
+  "/(main)/presence-elus/page": "app/(main)/presence-elus/page.js"
 }

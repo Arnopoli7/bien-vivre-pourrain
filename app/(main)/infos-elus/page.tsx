@@ -175,6 +175,7 @@ export default function InfosElusPage() {
               </p>
             </div>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
@@ -190,6 +191,7 @@ export default function InfosElusPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}

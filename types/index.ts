@@ -56,7 +56,7 @@ export interface User {
   nom: string
   email: string
   identifiant?: string
-  role: "maire" | "adjoint" | "conseiller"
+  role: "maire" | "adjoint" | "conseiller" | "secretaire"
   motDePasse?: string
   motDePasseTemporaire?: boolean
 }
@@ -67,6 +67,18 @@ export interface Reunion {
   date: string   // YYYY-MM-DD
   heure: string  // HH:MM
   lieu: string
+  titre?: string  // Titre ou objet de la réunion
+  presences?: Record<string, "present" | "absent">  // userId → statut
+}
+
+export interface Absence {
+  id: string
+  userId: string
+  nomUtilisateur: string
+  dateDebut: string   // YYYY-MM-DD
+  dateFin: string     // YYYY-MM-DD
+  motif?: string
+  dateCreation: string  // YYYY-MM-DD
 }
 
 // commissionId → liste des userId autorisés

@@ -15,24 +15,40 @@ const roleBadgeColors: Record<string, string> = {
   conseiller: "bg-[#5FAF5A] text-white",
 }
 
-export default function Navbar() {
+interface NavbarProps {
+  onMenuClick?: () => void
+}
+
+export default function Navbar({ onMenuClick }: NavbarProps) {
   const router = useRouter()
   const { currentUser } = useApp()
 
+  const firstName = currentUser?.nom.split(" ")[0] ?? ""
+
   return (
-    <header className="h-16 bg-white border-b-2 border-[#F2C94C] flex items-center justify-between px-6 sticky top-0 z-30">
-      <div className="flex items-center gap-2">
-        <h2 className="text-sm font-medium text-gray-500">
+    <header className="h-16 bg-white border-b-2 border-[#F2C94C] flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+      {/* Left: hamburger (mobile) or commune name (desktop) */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuClick}
+          className="md:hidden p-2 rounded-lg text-[#B4432E] hover:bg-[#FFF8E8] transition-colors text-xl leading-none"
+          aria-label="Ouvrir le menu"
+        >
+          ☰
+        </button>
+        <h2 className="hidden md:block text-sm font-medium text-gray-500">
           Commune de Pourrain — Yonne (89)
         </h2>
       </div>
-      <div className="flex items-center gap-4">
+
+      {/* Right: user info + logout */}
+      <div className="flex items-center gap-2 md:gap-4">
         {currentUser && (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-[#B4432E] flex items-center justify-center text-white text-sm font-bold">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#B4432E] flex items-center justify-center text-white text-sm font-bold shrink-0">
               {currentUser.nom.charAt(0)}
             </div>
-            <div className="text-right">
+            <div className="text-right hidden md:block">
               <p className="text-sm font-semibold text-gray-900 leading-tight">{currentUser.nom}</p>
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${roleBadgeColors[currentUser.role]}`}>
@@ -40,6 +56,7 @@ export default function Navbar() {
                 </span>
               </div>
             </div>
+            <p className="text-sm font-semibold text-gray-900 md:hidden">{firstName}</p>
           </div>
         )}
         <button
@@ -48,10 +65,10 @@ export default function Navbar() {
             localStorage.removeItem("bvap_user_id")
             router.push("/login")
           }}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors min-h-[44px]"
         >
           <span>🚪</span>
-          <span>Déconnexion</span>
+          <span className="hidden sm:inline">Déconnexion</span>
         </button>
       </div>
     </header>

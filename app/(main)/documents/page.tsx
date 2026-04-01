@@ -8,7 +8,8 @@ import AjouterDocumentModal from "@/components/ui/AjouterDocumentModal"
 const YEARS = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
 
 export default function DocumentsPage() {
-  const { commissions, documents, aCommissionAcces } = useApp()
+  const { currentUser, commissions, documents, aCommissionAcces } = useApp()
+  const canWrite = currentUser?.role === "maire" || currentUser?.role === "adjoint" || currentUser?.role === "secretaire"
   const [filterCommission, setFilterCommission] = useState("")
   const [filterYear, setFilterYear] = useState("")
   const [modalOuvert, setModalOuvert] = useState(false)
@@ -32,13 +33,15 @@ export default function DocumentsPage() {
             {filtered.length !== documentsAccessibles.length && ` (sur ${documentsAccessibles.length})`}
           </p>
         </div>
-        <button
-          onClick={() => setModalOuvert(true)}
-          className="flex items-center gap-2 bg-[#B4432E] hover:bg-[#8B3222] text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
-        >
-          <span>+</span>
-          Ajouter un document
-        </button>
+        {canWrite && (
+          <button
+            onClick={() => setModalOuvert(true)}
+            className="flex items-center gap-2 bg-[#B4432E] hover:bg-[#8B3222] text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors"
+          >
+            <span>+</span>
+            Ajouter un document
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -86,11 +89,14 @@ export default function DocumentsPage() {
             <p className="text-4xl mb-3">📭</p>
             <p className="text-gray-500 text-sm">
               {documentsAccessibles.length === 0
-                ? "Aucun document. Cliquez sur « Ajouter un document » pour commencer."
+                ? canWrite
+                  ? "Aucun document. Cliquez sur « Ajouter un document » pour commencer."
+                  : "Aucun document disponible."
                 : "Aucun document ne correspond aux filtres"}
             </p>
           </div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
@@ -107,6 +113,7 @@ export default function DocumentsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
