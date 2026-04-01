@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 import DocumentCard from "@/components/ui/DocumentCard"
 import AjouterDocumentModal from "@/components/ui/AjouterDocumentModal"
+import { getMembresCommission } from "@/lib/commission-membres"
 
 const YEARS = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
 const MOIS_FR = [
@@ -20,6 +21,7 @@ export default function CommissionDetailPage({ params }: PageProps) {
   const { currentUser, commissions, documents, mettreALaCorbeille, peutSupprimer } = useApp()
   const commission = commissions.find(c => c.id === params.id)
   if (!commission) notFound()
+  const membresCommission = getMembresCommission(params.id)
   const [selectedYear, setSelectedYear] = useState(2026)
   const [selectedMois, setSelectedMois] = useState<number | null>(null)
   const [modalOuvert, setModalOuvert] = useState(false)
@@ -81,6 +83,24 @@ export default function CommissionDetailPage({ params }: PageProps) {
           </button>
         )}
       </div>
+
+      {/* Members */}
+      {membresCommission.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-sm">⭐</span>
+            <h2 className="text-sm font-semibold text-gray-700">Membres de la commission</h2>
+            <span className="ml-auto text-xs text-gray-400">{membresCommission.length} membre{membresCommission.length !== 1 ? "s" : ""}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {membresCommission.map(nom => (
+              <span key={nom} className="text-xs px-2.5 py-1 bg-green-50 text-green-800 border border-green-200 rounded-full font-medium">
+                {nom}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Year tabs */}
       <div className="flex items-center gap-2 flex-wrap">

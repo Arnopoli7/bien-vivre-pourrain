@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useApp } from "@/lib/app-context"
 import { commissionColors } from "@/lib/commission-colors"
 import type { Reunion } from "@/types"
+import { getMembresCommission } from "@/lib/commission-membres"
 
 const MOIS_FR = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -62,10 +63,15 @@ function ReunionDetailModal({
   const presences = reunion.presences ?? {}
   const monStatut = currentUser ? presences[currentUser.id] : undefined
 
-  const presents = elus.filter(u => presences[u.id] === "present")
-  const absents = elus.filter(u => presences[u.id] === "absent")
-  const sansReponse = elus.filter(u => !presences[u.id])
-  const { nbP, nbA, nbS } = presenceCounts(reunion, elus.length)
+  const membresNoms = getMembresCommission(reunion.commissionId)
+  const hasMembres = membresNoms.length > 0
+  const membres = hasMembres ? elus.filter(u => membresNoms.includes(u.nom)) : elus
+  const autresElus = hasMembres ? elus.filter(u => !membresNoms.includes(u.nom)) : []
+
+  const membresPresents = membres.filter(u => presences[u.id] === "present")
+  const membresAbsents = membres.filter(u => presences[u.id] === "absent")
+  const membresSansReponse = membres.filter(u => !presences[u.id])
+  const autresPresents = autresElus.filter(u => presences[u.id] === "present")
 
   function handleSupprimer() {
     if (window.confirm("Êtes-vous sûr de vouloir supprimer cette réunion ?")) {
@@ -159,94 +165,128 @@ function ReunionDetailModal({
           )}
         </div>
 
-        {/* ── COMPTEUR ── */}
-        <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
+        {/* ── COMPTEURS ── */}
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-100 space-y-1">
           <p className="text-sm text-center font-medium text-gray-700">
-            <span className="text-green-600 font-semibold">✅ {nbP} présent{nbP !== 1 ? "s" : ""}</span>
-            <span className="text-gray-400 mx-2">·</span>
-            <span className="text-red-500 font-semibold">❌ {nbA} absent{nbA !== 1 ? "s" : ""}</span>
-            <span className="text-gray-400 mx-2">·</span>
-            <span className="text-gray-500 font-semibold">⏳ {nbS} sans réponse</span>
+            <span className="text-amber-600 font-semibold">⭐ Membres :</span>
+            {" "}
+            <span className="text-green-600 font-semibold">✅ {membresPresents.length} présent{membresPresents.length !== 1 ? "s" : ""}</span>
+            <span className="text-gray-400 mx-1.5">·</span>
+            <span className="text-red-500 font-semibold">❌ {membresAbsents.length} absent{membresAbsents.length !== 1 ? "s" : ""}</span>
+            <span className="text-gray-400 mx-1.5">·</span>
+            <span className="text-gray-500 font-semibold">⏳ {membresSansReponse.length} sans réponse</span>
           </p>
+          {autresElus.length > 0 && (
+            <p className="text-xs text-center text-gray-500">
+              {"Autres élus : "}
+              <span className="text-green-600 font-semibold">✅ {autresPresents.length} présent{autresPresents.length !== 1 ? "s" : ""}</span>
+            </p>
+          )}
         </div>
 
-        {/* ── TROIS COLONNES PRÉSENCES ── */}
-        <div className="grid grid-cols-3 divide-x divide-gray-100 px-0">
-          {/* Présents */}
-          <div className="bg-green-50/60 p-4">
-            <div className="flex items-center gap-1.5 mb-3">
-              <span className="text-base">✅</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-green-700">
-                Présents
-              </span>
-              <span className="ml-auto text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-full">
-                {presents.length}
-              </span>
-            </div>
-            {presents.length === 0 ? (
-              <p className="text-xs text-green-400 italic">Aucun pour l'instant</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {presents.map(u => (
-                  <li key={u.id} className="flex items-center gap-1.5 text-xs text-gray-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
-                    {u.nom}
-                  </li>
-                ))}
-              </ul>
-            )}
+        {/* ── SECTION 1 : MEMBRES DE LA COMMISSION ── */}
+        <div className="bg-green-50/40 border-b border-gray-100">
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+            <span className="text-sm">⭐</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-green-800">
+              Membres de la commission
+            </span>
+            <span className="ml-auto text-[10px] font-semibold text-green-600">
+              {membres.length} membre{membres.length !== 1 ? "s" : ""}
+            </span>
           </div>
-
-          {/* Absents */}
-          <div className="bg-red-50/60 p-4">
-            <div className="flex items-center gap-1.5 mb-3">
-              <span className="text-base">❌</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-red-600">
-                Absents
-              </span>
-              <span className="ml-auto text-xs font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded-full">
-                {absents.length}
-              </span>
+          <div className="grid grid-cols-3 divide-x divide-green-100">
+            {/* Présents membres */}
+            <div className="p-3">
+              <div className="flex items-center gap-1 mb-2">
+                <span className="text-xs">✅</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-green-700">Présents</span>
+                <span className="ml-auto text-[10px] font-bold text-green-600 bg-green-100 px-1 py-0.5 rounded-full">{membresPresents.length}</span>
+              </div>
+              {membresPresents.length === 0 ? (
+                <p className="text-[10px] text-green-300 italic">Aucun</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {membresPresents.map(u => (
+                    <li key={u.id} className="flex items-center gap-1.5 text-[11px] text-gray-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
+                      {u.nom}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            {absents.length === 0 ? (
-              <p className="text-xs text-red-300 italic">Aucun</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {absents.map(u => (
-                  <li key={u.id} className="flex items-center gap-1.5 text-xs text-gray-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
-                    {u.nom}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Sans réponse */}
-          <div className="bg-gray-50/80 p-4">
-            <div className="flex items-center gap-1.5 mb-3">
-              <span className="text-base">⏳</span>
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                Sans réponse
-              </span>
-              <span className="ml-auto text-xs font-bold text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded-full">
-                {sansReponse.length}
-              </span>
+            {/* Absents membres */}
+            <div className="p-3">
+              <div className="flex items-center gap-1 mb-2">
+                <span className="text-xs">❌</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-red-600">Absents</span>
+                <span className="ml-auto text-[10px] font-bold text-red-500 bg-red-100 px-1 py-0.5 rounded-full">{membresAbsents.length}</span>
+              </div>
+              {membresAbsents.length === 0 ? (
+                <p className="text-[10px] text-red-300 italic">Aucun</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {membresAbsents.map(u => (
+                    <li key={u.id} className="flex items-center gap-1.5 text-[11px] text-gray-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                      {u.nom}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
-            {sansReponse.length === 0 ? (
-              <p className="text-xs text-gray-400 italic">Tout le monde a répondu !</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {sansReponse.map(u => (
-                  <li key={u.id} className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
-                    {u.nom}
-                  </li>
-                ))}
-              </ul>
-            )}
+            {/* Sans réponse membres */}
+            <div className="p-3">
+              <div className="flex items-center gap-1 mb-2">
+                <span className="text-xs">⏳</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Sans rép.</span>
+                <span className="ml-auto text-[10px] font-bold text-gray-500 bg-gray-200 px-1 py-0.5 rounded-full">{membresSansReponse.length}</span>
+              </div>
+              {membresSansReponse.length === 0 ? (
+                <p className="text-[10px] text-gray-400 italic">Tous ont répondu !</p>
+              ) : (
+                <ul className="space-y-1.5">
+                  {membresSansReponse.map(u => (
+                    <li key={u.id} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-300 shrink-0" />
+                      {u.nom}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* ── SECTION 2 : AUTRES ÉLUS ── */}
+        {autresElus.length > 0 && (
+          <div className="bg-gray-50/60 border-b border-gray-100">
+            <div className="px-4 pt-3 pb-2 flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Autres élus</span>
+              <span className="ml-auto text-[10px] font-semibold text-gray-400">{autresElus.length}</span>
+            </div>
+            <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+              {autresElus.map(u => {
+                const statut = presences[u.id]
+                return (
+                  <span
+                    key={u.id}
+                    className={`text-[10px] px-2 py-1 rounded-full font-medium ${
+                      statut === "present"
+                        ? "bg-green-100 text-green-700"
+                        : statut === "absent"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {statut === "present" ? "✅" : statut === "absent" ? "❌" : "⏳"} {u.nom}
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── PIED DE PAGE ── */}
         <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
