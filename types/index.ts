@@ -21,6 +21,7 @@ export interface CompteRendu {
   ordresDuJour: string[]
   corps: CorpsSection[]
   statut: "brouillon" | "en_attente" | "valide"
+  archive?: boolean | null
   redacteur: string
   dateRedaction: string // YYYY-MM-DD
   annexes?: Fichier[]

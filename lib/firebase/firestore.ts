@@ -178,8 +178,13 @@ export async function sauvegarderCompteRenduFirestore(cr: CompteRendu): Promise<
     presents: data.presents ?? [],
     absentsExcuses: data.absentsExcuses ?? [],
     corps: data.corps ?? [],
+    archive: data.archive ?? null,
   }
   await setDoc(firestoreDoc(db, "comptes_rendus", id), clean)
+}
+
+export async function toggleArchiveCompteRendu(id: string, archive: boolean): Promise<void> {
+  await updateDoc(firestoreDoc(db, "comptes_rendus", id), { archive })
 }
 
 export async function supprimerCompteRenduFirestore(id: string): Promise<void> {
