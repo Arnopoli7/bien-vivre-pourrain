@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --rouge: #B4432E;
+  --jaune: #F2C94C;
+  --vert: #5FAF5A;
+  --noir: #1A1A1A;
+}
+
+body {
+  background-color: #F5F5F4;
+}
+
+/* Print: mise en page A4 */
+@media print {
+  * {
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    background: white !important;
+  }
+
+  /* Masquer sidebar, navbar et boutons */
+  nav, aside, header,
+  [class*="sidebar"],
+  [class*="navbar"],
+  [class*="Sidebar"],
+  [class*="Navbar"],
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Contenu principal centré */
+  main,
+  [class*="main"],
+  [class*="content"] {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 1cm !important;
+    left: 0 !important;
+    position: relative !important;
+  }
+
+  /* Format A4 */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+}
+
+/* Custom scrollbar for sidebar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
