@@ -21,4 +21,5 @@ export const commissionEmojis: Record<string, string> = {
   "20": "🤝",
   "21": "🏛️",
   "22": "📌",
+  "23": "🏙️",
 }

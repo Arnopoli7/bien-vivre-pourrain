@@ -46,7 +46,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           onClick={onClose}
         />
       )}
-    <aside className={`w-72 min-h-screen bg-white text-[#1A1A1A] flex flex-col fixed left-0 top-0 z-40 border-r-2 border-[#F2C94C] transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
+    <aside className={`w-72 h-screen overflow-y-auto bg-white text-[#1A1A1A] flex flex-col fixed left-0 top-0 z-40 border-r-2 border-[#F2C94C] transition-transform duration-300 ease-in-out ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}>
       {/* Logo */}
       <div className="px-6 py-6 border-b border-gray-100">
         <Image
@@ -65,7 +65,7 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           Navigation
         </p>
         {visibleItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+          const isActive = pathname === item.href || (pathname?.startsWith(item.href + "/") ?? false)
           const badge =
             (item.href === "/corbeille" && nbCorbeille > 0) ? nbCorbeille :
             (item.href === "/presence-elus" && nbAbsentsAujourdhui > 0) ? nbAbsentsAujourdhui :

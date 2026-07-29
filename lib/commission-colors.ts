@@ -21,4 +21,5 @@ export const commissionColors: Record<string, string> = {
   "20": "#F0EEF8",
   "21": "#F0EEF8",
   "22": "#FFF8F0",
+  "23": "#E8F0FF",
 }
