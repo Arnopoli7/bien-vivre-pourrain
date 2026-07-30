@@ -7,6 +7,7 @@ import DocumentCard from "@/components/ui/DocumentCard"
 import AjouterDocumentModal from "@/components/ui/AjouterDocumentModal"
 import { getMembresCommission } from "@/lib/commission-membres"
 import { COMMISSION_COMCOM_ID, SOUS_DOSSIERS_COMCOM } from "@/lib/sous-dossiers-comcom"
+import { rangerCompteRenduSousDossier } from "@/lib/firebase/firestore"
 
 const YEARS = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
 const MOIS_FR = [
@@ -19,7 +20,7 @@ interface PageProps {
 }
 
 export default function CommissionDetailPage({ params }: PageProps) {
-  const { currentUser, commissions, documents, mettreALaCorbeille, peutSupprimer } = useApp()
+  const { currentUser, commissions, documents, mettreALaCorbeille, peutSupprimer, modifierDocument } = useApp()
   const commission = commissions.find(c => c.id === params.id)
   if (!commission) notFound()
   const membresCommission = getMembresCommission(params.id)
@@ -27,6 +28,8 @@ export default function CommissionDetailPage({ params }: PageProps) {
   const [selectedMois, setSelectedMois] = useState<number | null>(null)
   const [modalOuvert, setModalOuvert] = useState(false)
   const [selectedSousDossier, setSelectedSousDossier] = useState<string | null>(null)
+  const [rangerMap, setRangerMap] = useState<Record<string, string>>({})
+  const [rangerEnCours, setRangerEnCours] = useState<string | null>(null)
 
   const isComCom = params.id === COMMISSION_COMCOM_ID
 
@@ -73,6 +76,21 @@ export default function CommissionDetailPage({ params }: PageProps) {
       mettreALaCorbeille(docs.map(d => d.id))
       setSelectedMois(null)
     }
+  }
+
+  const docsAClasser = isComCom
+    ? documents.filter(d => d.commissionId === params.id && !d.sousDossier)
+    : []
+
+  async function handleRanger(doc: import("@/types").Document) {
+    const sousDossierId = rangerMap[doc.id]
+    if (!sousDossierId) return
+    setRangerEnCours(doc.id)
+    modifierDocument({ ...doc, sousDossier: sousDossierId })
+    if (doc.type === "compte_rendu" && doc.compteRenduId) {
+      await rangerCompteRenduSousDossier(doc.compteRenduId, sousDossierId).catch(console.error)
+    }
+    setRangerEnCours(null)
   }
 
   const sousDossierLabel = selectedSousDossier
@@ -144,6 +162,43 @@ export default function CommissionDetailPage({ params }: PageProps) {
                 </button>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ComCom : documents sans sous-dossier à classer */}
+      {isComCom && selectedSousDossier === null && docsAClasser.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 border-b border-amber-200 flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <h2 className="text-sm font-semibold text-amber-800">
+              À classer — {docsAClasser.length} document{docsAClasser.length !== 1 ? "s" : ""} sans sous-dossier
+            </h2>
+          </div>
+          <div className="divide-y divide-amber-100">
+            {docsAClasser.map(doc => (
+              <div key={doc.id} className="flex items-center gap-3 px-5 py-3 flex-wrap">
+                <span className="text-sm text-gray-800 flex-1 min-w-0 truncate">{doc.titre}</span>
+                <span className="text-xs text-gray-400 whitespace-nowrap">{doc.date}</span>
+                <select
+                  value={rangerMap[doc.id] ?? ""}
+                  onChange={e => setRangerMap(prev => ({ ...prev, [doc.id]: e.target.value }))}
+                  className="text-sm px-3 py-1.5 rounded-lg border border-amber-300 bg-white focus:outline-none focus:ring-2 focus:ring-[#B4432E]/20 focus:border-[#B4432E]"
+                >
+                  <option value="">— Choisir un sous-dossier —</option>
+                  {SOUS_DOSSIERS_COMCOM.map(sd => (
+                    <option key={sd.id} value={sd.id}>{sd.nom}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => handleRanger(doc)}
+                  disabled={!rangerMap[doc.id] || rangerEnCours === doc.id}
+                  className="text-sm px-3 py-1.5 rounded-lg bg-[#B4432E] hover:bg-[#8B3222] text-white font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {rangerEnCours === doc.id ? "…" : "Ranger"}
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -192,6 +192,10 @@ export async function supprimerCompteRenduFirestore(id: string): Promise<void> {
   await deleteDoc(firestoreDoc(db, "comptes_rendus", id))
 }
 
+export async function rangerCompteRenduSousDossier(id: string, sousDossier: string): Promise<void> {
+  await updateDoc(firestoreDoc(db, "comptes_rendus", id), { sousDossier })
+}
+
 export async function getCompteRenduById(id: string): Promise<CompteRendu | null> {
   const snap = await getDoc(firestoreDoc(db, "comptes_rendus", id))
   if (!snap.exists()) return null

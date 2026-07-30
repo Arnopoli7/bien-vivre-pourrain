@@ -9,6 +9,7 @@ import { formatDate, formatFileSize, getFileColorClass } from "@/lib/utils"
 import BoutonTelechargement, { telechargerFichier } from "@/components/ui/BoutonTelechargement"
 import { getCompteRenduById } from "@/lib/firebase/firestore"
 import { telechargerCompteRenduPDF } from "@/lib/generer-pdf-cr"
+import { COMMISSION_COMCOM_ID, SOUS_DOSSIERS_COMCOM } from "@/lib/sous-dossiers-comcom"
 
 const YEARS = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033]
 const MOIS_FR = [
@@ -29,11 +30,21 @@ function ModifierDocumentModal({ document: doc, onClose, onSave }: ModifierModal
   const [selectedCommission, setSelectedCommission] = useState(doc.commissionId)
   const [selectedYear, setSelectedYear] = useState(doc.annee)
   const [selectedMois, setSelectedMois] = useState(doc.mois)
+  const [selectedSousDossier, setSelectedSousDossier] = useState(doc.sousDossier ?? "")
   const [erreur, setErreur] = useState("")
+
+  function handleCommissionChange(newId: string) {
+    setSelectedCommission(newId)
+    if (newId !== COMMISSION_COMCOM_ID) setSelectedSousDossier("")
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!titre.trim()) { setErreur("Le titre est obligatoire."); return }
+    if (selectedCommission === COMMISSION_COMCOM_ID && !selectedSousDossier) {
+      setErreur("Veuillez choisir un sous-dossier.")
+      return
+    }
     onSave({
       ...doc,
       titre: titre.trim(),
@@ -42,6 +53,9 @@ function ModifierDocumentModal({ document: doc, onClose, onSave }: ModifierModal
       annee: selectedYear,
       mois: selectedMois,
       auteur: currentUser?.nom ?? doc.auteur,
+      ...(selectedCommission === COMMISSION_COMCOM_ID
+        ? { sousDossier: selectedSousDossier }
+        : { sousDossier: undefined }),
     })
     onClose()
   }
@@ -100,7 +114,7 @@ function ModifierDocumentModal({ document: doc, onClose, onSave }: ModifierModal
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Commission</label>
             <select
               value={selectedCommission}
-              onChange={e => setSelectedCommission(e.target.value)}
+              onChange={e => handleCommissionChange(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#B4432E]/20 focus:border-[#B4432E]"
             >
               {commissions.map(c => (
@@ -108,6 +122,23 @@ function ModifierDocumentModal({ document: doc, onClose, onSave }: ModifierModal
               ))}
             </select>
           </div>
+          {selectedCommission === COMMISSION_COMCOM_ID && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Sous-dossier <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedSousDossier}
+                onChange={e => setSelectedSousDossier(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#B4432E]/20 focus:border-[#B4432E]"
+              >
+                <option value="">— Choisir un sous-dossier —</option>
+                {SOUS_DOSSIERS_COMCOM.map(sd => (
+                  <option key={sd.id} value={sd.id}>{sd.nom}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <p className="text-xs text-gray-400">Les fichiers joints ne peuvent pas être modifiés ici.</p>
           {erreur && <p className="text-sm text-[#B4432E]">{erreur}</p>}
           <div className="flex justify-end gap-3 pt-2">
