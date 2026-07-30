@@ -24,10 +24,11 @@ interface Props {
   commissionId?: string
   annee?: number
   mois?: number
+  sousDossierId?: string
   onSuccess?: (annee: number, mois: number) => void
 }
 
-export default function AjouterDocumentModal({ onClose, commissionId, annee, mois, onSuccess }: Props) {
+export default function AjouterDocumentModal({ onClose, commissionId, annee, mois, sousDossierId, onSuccess }: Props) {
   const { currentUser, commissions, ajouterDocument } = useApp()
   const today = new Date()
 
@@ -103,6 +104,7 @@ export default function AjouterDocumentModal({ onClose, commissionId, annee, moi
       date,
       auteur: currentUser?.nom ?? "",
       fichiers: fichiersData,
+      ...(sousDossierId ? { sousDossier: sousDossierId } : {}),
     }
 
     ajouterDocument(newDoc)

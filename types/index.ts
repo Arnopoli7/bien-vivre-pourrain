@@ -27,6 +27,7 @@ export interface CompteRendu {
   annexes?: Fichier[]
   personnesExterieures?: string[]   // Noms des personnes externes (présentes ou absentes)
   messageCorrection?: string         // Message laissé par le maire lors d'un renvoi pour correction
+  sousDossier?: string               // ID du sous-dossier (commission "23" uniquement)
 }
 
 export interface Fichier {
@@ -57,6 +58,7 @@ export interface Document {
   compteRenduId?: string     // ID du compte rendu source (si type === "compte_rendu")
   validepar?: string         // Nom du validateur (Pierre Maison)
   valideAt?: string          // ISO date de validation
+  sousDossier?: string       // ID du sous-dossier (commission "23" uniquement)
 }
 
 export interface User {

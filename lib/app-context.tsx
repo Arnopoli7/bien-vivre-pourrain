@@ -155,6 +155,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 statut: "validé",
                 compteRenduId: cr.id,
                 nbAnnexes: annexes.length || 0,
+                ...(cr.sousDossier ? { sousDossier: cr.sousDossier } : {}),
               }
             })
 
