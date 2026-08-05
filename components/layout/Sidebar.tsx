@@ -5,14 +5,20 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useApp } from "@/lib/app-context"
 
+// Rôles ayant accès à la navigation de base
+const ROLES_BASE = ["maire", "adjoint", "conseiller", "secretaire", "rédacteur"]
+
+// Liens affichés en secours pour tout rôle inconnu (menu jamais vide)
+const FALLBACK_HREFS = ["/dashboard", "/commissions", "/notes", "/calendrier", "/documents"]
+
 const navItems: Array<{ href: string; label: string; icon: string; roles: string[]; identifiant?: string }> = [
-  { href: "/dashboard",      label: "Tableau de bord",  icon: "🏠",  roles: ["maire", "adjoint", "conseiller", "secretaire"] },
-  { href: "/commissions",    label: "Commissions",       icon: "📋",  roles: ["maire", "adjoint", "conseiller", "secretaire"] },
-  { href: "/documents",      label: "Documents",         icon: "📁",  roles: ["maire", "adjoint", "conseiller", "secretaire"] },
-  { href: "/calendrier",     label: "Calendrier",        icon: "📅",  roles: ["maire", "adjoint", "conseiller"] },
-  { href: "/infos-elus",     label: "Infos Élus",        icon: "📌",  roles: ["maire", "adjoint", "conseiller", "secretaire"] },
-  { href: "/notes",          label: "Comptes rendus",    icon: "📝",  roles: ["maire", "adjoint"] },
-  { href: "/search",         label: "Recherche",         icon: "🔍",  roles: ["maire", "adjoint", "conseiller", "secretaire"] },
+  { href: "/dashboard",      label: "Tableau de bord",  icon: "🏠",  roles: ROLES_BASE },
+  { href: "/commissions",    label: "Commissions",       icon: "📋",  roles: ROLES_BASE },
+  { href: "/documents",      label: "Documents",         icon: "📁",  roles: ROLES_BASE },
+  { href: "/calendrier",     label: "Calendrier",        icon: "📅",  roles: ROLES_BASE },
+  { href: "/infos-elus",     label: "Infos Élus",        icon: "📌",  roles: ROLES_BASE },
+  { href: "/notes",          label: "Comptes rendus",    icon: "📝",  roles: ["maire", "adjoint", "rédacteur"] },
+  { href: "/search",         label: "Recherche",         icon: "🔍",  roles: ROLES_BASE },
   { href: "/admin",          label: "Administration",    icon: "⚙️", roles: ["adjoint"], identifiant: "ArnaudP" },
   { href: "/presence-elus",  label: "Présence Élus",     icon: "📊",  roles: ["maire", "adjoint", "conseiller"] },
   { href: "/corbeille",      label: "Corbeille",         icon: "🗑️", roles: ["maire", "adjoint"] },
@@ -31,11 +37,16 @@ export default function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const todayISO = new Date().toISOString().slice(0, 10)
   const nbAbsentsAujourdhui = absences.filter(a => a.dateDebut <= todayISO && a.dateFin >= todayISO).length
 
-  const visibleItems = navItems.filter(item => {
+  const filtered = navItems.filter(item => {
     if (!item.roles.includes(role)) return false
     if (item.identifiant && currentUser?.identifiant !== item.identifiant) return false
     return true
   })
+
+  // Fallback : rôle inconnu → on affiche au moins les liens de base
+  const visibleItems = filtered.length > 0
+    ? filtered
+    : navItems.filter(item => FALLBACK_HREFS.includes(item.href))
 
   return (
     <>
