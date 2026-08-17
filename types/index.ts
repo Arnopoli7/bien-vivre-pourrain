@@ -66,7 +66,7 @@ export interface User {
   nom: string
   email: string
   identifiant?: string
-  role: "maire" | "adjoint" | "conseiller" | "secretaire" | "redacteur"
+  role: "maire" | "adjoint" | "conseiller" | "secretaire" | "redacteur" | "inactif"
   motDePasse?: string
   motDePasseTemporaire?: boolean
 }
