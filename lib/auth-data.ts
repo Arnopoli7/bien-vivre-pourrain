@@ -11,7 +11,7 @@ export const USERS_AUTH: User[] = [
   { id: "u5",  nom: "Claire Vandaele",   email: "clairevandaele@wanadoo.fr",        identifiant: "ClaireV",    role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u6",  nom: "Mélanie Darcel",    email: "guillouet.melanie89@gmail.com",    identifiant: "MelanieD",   role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u7",  nom: "Gilles Laburthe",   email: "laburthe.gilles@wanadoo.fr",       identifiant: "GillesL",    role: "redacteur",  motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
-  { id: "u8",  nom: "Adélina Gallet",    email: "",                                 identifiant: "AdelinaG",   role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
+  { id: "u8",  nom: "Adélina Gallet",    email: "adelina.gallet@gmail.com",         identifiant: "AdelinaG",   role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u9",  nom: "François Petit",    email: "abc.petitfrancois@gmail.com",      identifiant: "FrancoisP",  role: "redacteur",  motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u10", nom: "Awa Kouyate",       email: "eva.koya@gmail.com",               identifiant: "AwaK",       role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u11", nom: "Frédéric Gasset",   email: "fredindy@orange.fr",               identifiant: "FredericG",  role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
