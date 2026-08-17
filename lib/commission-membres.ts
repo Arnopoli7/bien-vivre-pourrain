@@ -7,7 +7,7 @@ export const MEMBRES_COMMISSIONS: Record<string, string[]> = {
   "Voirie": ["Pierre Maison", "Pascal Bellanger", "Denis Boivin", "Quentin Bellanger", "Yves Malaurent"],
   "Bâtiments Entretien courant": ["Pascal Bellanger", "Anne Virtel", "Mélanie Darcel", "Frédéric Gasset", "Denis Boivin", "Flavie Maison", "Quentin Bellanger", "Yves Malaurent"],
   "Assainissement": ["Pascal Bellanger", "Claire Vandaele", "François Petit", "Denis Boivin", "Maryline Ventura"],
-  "Cimetière": ["Pascal Bellanger", "Anne Virtel", "Flavie Maison", "Yves Malaurent"],
+  "Cimetière": ["Pascal Bellanger", "Anne Virtel", "Claire Vandaele", "Flavie Maison", "Yves Malaurent"],
   "C.C.A.S.": ["Anne Virtel", "Claire Vandaele", "Adélina Gallet", "Awa Kouyate", "Céline Boivin"],
   "Communication": ["Anne Virtel", "Adélina Gallet", "Gilles Laburthe"],
   "Fêtes Manifestations Cérémonies": ["Pascal Bellanger", "Anne Virtel", "Gilles Laburthe", "Mélanie Darcel"],
