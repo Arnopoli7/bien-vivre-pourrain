@@ -17,6 +17,7 @@ export const MEMBRES_COMMISSIONS: Record<string, string[]> = {
   "Cadre de vie et économie": ["Pierre Maison", "Arnaud Poli", "Claire Vandaele", "Adélina Gallet", "Flavie Maison", "Maryline Ventura"],
   "Conseil Municipal": ["Pierre Maison", "Pascal Bellanger", "Anne Virtel", "Arnaud Poli", "Claire Vandaele", "Mélanie Darcel", "Gilles Laburthe", "Adélina Gallet", "François Petit", "Awa Kouyate", "Frédéric Gasset", "Céline Boivin", "Denis Boivin", "Flavie Maison", "Quentin Bellanger", "Maryline Ventura", "Yves Malaurent"],
   "Infos communauté de communes": ["Pierre Maison", "Pascal Bellanger", "Anne Virtel", "Arnaud Poli", "Claire Vandaele", "Mélanie Darcel", "Gilles Laburthe", "Adélina Gallet", "François Petit", "Awa Kouyate", "Frédéric Gasset", "Céline Boivin", "Denis Boivin", "Flavie Maison", "Quentin Bellanger", "Maryline Ventura", "Yves Malaurent"],
+  "Validation menus": ["Arnaud Poli", "Maryline Ventura", "Denis Boivin", "Mélanie Darcel"],
   "Réunion Maire et Adjoints": ["Pierre Maison", "Pascal Bellanger", "Anne Virtel", "Arnaud Poli"],
   "RDV Divers": [
     "Pierre Maison", "Pascal Bellanger", "Anne Virtel",
@@ -50,6 +51,7 @@ export const MEMBRES_PAR_COMMISSION_ID: Record<string, string[]> = {
   "21": MEMBRES_COMMISSIONS["Conseil Municipal"],
   "22": MEMBRES_COMMISSIONS["RDV Divers"],
   "23": MEMBRES_COMMISSIONS["Infos communauté de communes"],
+  "24": MEMBRES_COMMISSIONS["Validation menus"],
 }
 
 export function getMembresCommission(commissionId: string): string[] {

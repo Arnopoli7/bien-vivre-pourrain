@@ -40,6 +40,7 @@ const COMMISSIONS_INITIALES: Array<{ id: string; nom: string }> = [
   { id: "21", nom: "🏛️ Conseil Municipal" },
   { id: "22", nom: "RDV Divers" },
   { id: "23", nom: "Infos communauté de communes" },
+  { id: "24", nom: "Validation menus" },
 ]
 
 export async function getCommissions(): Promise<Commission[]> {
