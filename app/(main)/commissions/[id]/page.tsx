@@ -93,9 +93,11 @@ export default function CommissionDetailPage({ params }: PageProps) {
     setRangerEnCours(null)
   }
 
-  const sousDossierLabel = selectedSousDossier
-    ? SOUS_DOSSIERS_COMCOM.find(sd => sd.id === selectedSousDossier)?.nom ?? ""
-    : ""
+  const sousDossierCourant = selectedSousDossier
+    ? SOUS_DOSSIERS_COMCOM.find(sd => sd.id === selectedSousDossier)
+    : null
+  const sousDossierLabel = sousDossierCourant?.nom ?? ""
+  const sousDossierEmoji = sousDossierCourant?.emoji ?? "📁"
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -106,7 +108,7 @@ export default function CommissionDetailPage({ params }: PageProps) {
           <h1 className="text-2xl font-bold text-[#B4432E]">{commission.nom}</h1>
           {isComCom && selectedSousDossier && (
             <p className="text-sm text-gray-600 mt-1">
-              <span className="mr-1">📁</span>{sousDossierLabel}
+              <span className="mr-1">{sousDossierEmoji}</span>{sousDossierLabel}
             </p>
           )}
         </div>
@@ -154,7 +156,7 @@ export default function CommissionDetailPage({ params }: PageProps) {
                   onClick={() => { setSelectedSousDossier(sd.id); setSelectedMois(null) }}
                   className="flex items-start gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:border-[#B4432E]/40 hover:bg-[#FFF8E8] transition-all text-left group"
                 >
-                  <span className="text-xl mt-0.5 shrink-0">📁</span>
+                  <span className="text-xl mt-0.5 shrink-0">{sd.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 group-hover:text-[#B4432E] leading-snug">{sd.nom}</p>
                     <p className="text-xs text-gray-400 mt-1">{n} document{n !== 1 ? "s" : ""}</p>
