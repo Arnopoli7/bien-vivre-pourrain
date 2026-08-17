@@ -3,31 +3,41 @@ import { NextRequest, NextResponse } from "next/server"
 import { getMembresCommission } from "@/lib/commission-membres"
 import { USERS_AUTH } from "@/lib/auth-data"
 
-const DESTINATAIRES = [
-  "pierre.maison@neuf.fr",
-  "bellanger.pourrain@wanadoo.fr",
-  "anne.virtel59@free.fr",
-  "arnaudpoli@yahoo.fr",
-  "clairevandaele@wanadoo.fr",
-  "guillouet.melanie89@gmail.com",
-  "laburthe.gilles@wanadoo.fr",
-  "adelina.gallet@gmail.com",
-  "abc.petitfrancois@gmail.com",
-  "eva.koya@gmail.com",
-  "fredindy@orange.fr",
-  "celinebillardon@gmail.com",
-  "denis.boivin89@gmail.com",
-  "flavie.maison@hotmail.fr",
-  "quentin.bellanger89@gmail.com",
-  "marylineventura@orange.fr",
-  "ymalaurent@gmail.com",
-]
+// Tous les élus (hors secrétaires) ayant un email valide — source unique : USERS_AUTH
+const DESTINATAIRES = USERS_AUTH
+  .filter(u => u.role !== "secretaire" && u.email)
+  .map(u => u.email)
 
 function getEmailsCommission(commissionId: string): string[] {
   const noms = getMembresCommission(commissionId)
   return USERS_AUTH
     .filter(u => noms.includes(u.nom) && u.email)
     .map(u => u.email)
+}
+
+const FROM = '"Bien Vivre à Pourrain" <apoli.pourrain@gmail.com>'
+
+// Envoie un mail par destinataire — un échec n'arrête pas les autres
+async function sendToMany(
+  transporter: nodemailer.Transporter,
+  emails: string[],
+  subject: string,
+  html: string
+): Promise<{ sent: string[]; failed: string[] }> {
+  const results = await Promise.allSettled(
+    emails.map(to => transporter.sendMail({ from: FROM, to, subject, html }))
+  )
+  const sent: string[] = []
+  const failed: string[] = []
+  results.forEach((r, i) => {
+    if (r.status === "fulfilled") sent.push(emails[i])
+    else {
+      failed.push(emails[i])
+      console.error(`Échec envoi à ${emails[i]} :`, (r.reason as Error).message)
+    }
+  })
+  console.log(`Emails : ${sent.length} envoyés, ${failed.length} échoués${failed.length ? " — " + failed.join(", ") : ""}`)
+  return { sent, failed }
 }
 
 export async function POST(request: NextRequest) {
@@ -65,6 +75,9 @@ export async function POST(request: NextRequest) {
         <small style="color:#888;">Mairie de Pourrain — Yonne (89)</small>
       </div>
     `
+    const { sent, failed } = await sendToMany(transporter, DESTINATAIRES, subject, html)
+    return NextResponse.json({ success: true, sent: sent.length, failed })
+
   } else if (type === "validation_requise") {
     subject = `[BVAP] Compte rendu à valider — ${titre}`
     html = `
@@ -83,20 +96,17 @@ export async function POST(request: NextRequest) {
         <small style="color:#888;">Mairie de Pourrain — Yonne (89)</small>
       </div>
     `
-    try {
-      await nodemailer.createTransport({
-        service: "gmail",
-        auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASSWORD },
-      }).sendMail({
-        from: '"Bien Vivre à Pourrain" <apoli.pourrain@gmail.com>',
-        to: "pierre.maison@neuf.fr",
-        subject,
-        html,
-      })
-      return NextResponse.json({ success: true })
-    } catch (error) {
-      return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    // Notifier le maire (Pierre Maison)
+    const maireEmail = USERS_AUTH.find(u => u.role === "maire")?.email
+    if (maireEmail) {
+      try {
+        await transporter.sendMail({ from: FROM, to: maireEmail, subject, html })
+      } catch (error) {
+        return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+      }
     }
+    return NextResponse.json({ success: true })
+
   } else if (type === "reunion_modifiee") {
     const dateFr = new Date(date + "T12:00:00").toLocaleDateString("fr-FR", {
       weekday: "long", day: "numeric", month: "long", year: "numeric",
@@ -121,21 +131,13 @@ export async function POST(request: NextRequest) {
       </div>
     `
     if (commissionId) {
-      const destinatairesCommission = getEmailsCommission(commissionId).filter(Boolean)
+      const destinatairesCommission = getEmailsCommission(commissionId)
       if (destinatairesCommission.length > 0) {
-        try {
-          await transporter.sendMail({
-            from: '"Bien Vivre à Pourrain" <apoli.pourrain@gmail.com>',
-            to: destinatairesCommission.join(", "),
-            subject,
-            html,
-          })
-          return NextResponse.json({ success: true })
-        } catch (error) {
-          return NextResponse.json({ error: (error as Error).message }, { status: 500 })
-        }
+        const { sent, failed } = await sendToMany(transporter, destinatairesCommission, subject, html)
+        return NextResponse.json({ success: true, sent: sent.length, failed })
       }
     }
+
   } else if (type === "reunion") {
     const dateFr = new Date(date + "T12:00:00").toLocaleDateString("fr-FR", {
       weekday: "long", day: "numeric", month: "long", year: "numeric",
@@ -168,37 +170,17 @@ export async function POST(request: NextRequest) {
       </div>
     `
 
-    // Si on connaît la commission, envoyer uniquement à ses membres
+    // Envoyer uniquement aux membres de la commission
     if (commissionId) {
-      const destinatairesCommission = getEmailsCommission(commissionId).filter(Boolean)
+      const destinatairesCommission = getEmailsCommission(commissionId)
       if (destinatairesCommission.length > 0) {
-        try {
-          await transporter.sendMail({
-            from: '"Bien Vivre à Pourrain" <apoli.pourrain@gmail.com>',
-            to: destinatairesCommission.join(", "),
-            subject,
-            html,
-          })
-          return NextResponse.json({ success: true })
-        } catch (error) {
-          return NextResponse.json({ error: (error as Error).message }, { status: 500 })
-        }
+        const { sent, failed } = await sendToMany(transporter, destinatairesCommission, subject, html)
+        return NextResponse.json({ success: true, sent: sent.length, failed })
       }
     }
   }
 
-  try {
-    console.log("Envoi email en cours...")
-    await transporter.sendMail({
-      from: '"Bien Vivre à Pourrain" <apoli.pourrain@gmail.com>',
-      to: DESTINATAIRES.join(", "),
-      subject,
-      html,
-    })
-    console.log("Email envoyé avec succès")
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.log("Erreur email:", (error as Error).message)
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
-  }
+  // Fallback : envoyer à tous les élus
+  const { sent, failed } = await sendToMany(transporter, DESTINATAIRES, subject, html)
+  return NextResponse.json({ success: true, sent: sent.length, failed })
 }
