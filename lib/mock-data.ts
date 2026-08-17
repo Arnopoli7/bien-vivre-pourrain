@@ -36,7 +36,6 @@ export const users: User[] = [
   { id: "u9",  nom: "François Petit",    email: "f.petit@pourrain.fr",      role: "conseiller" },
   { id: "u10", nom: "Awa Kouyate",       email: "a.kouyate@pourrain.fr",    role: "conseiller" },
   { id: "u11", nom: "Frédéric Gasset",   email: "f.gasset@pourrain.fr",     role: "conseiller" },
-  { id: "u12", nom: "Céline Boivin",     email: "c.boivin@pourrain.fr",     role: "conseiller" },
   { id: "u13", nom: "Denis Boivin",      email: "d.boivin@pourrain.fr",     role: "conseiller" },
   { id: "u14", nom: "Flavie Maison",     email: "fl.maison@pourrain.fr",    role: "conseiller" },
   { id: "u15", nom: "Quentin Bellanger", email: "q.bellanger@pourrain.fr",  role: "conseiller" },

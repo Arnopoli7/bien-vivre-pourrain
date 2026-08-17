@@ -15,7 +15,6 @@ export const USERS_AUTH: User[] = [
   { id: "u9",  nom: "François Petit",    email: "abc.petitfrancois@gmail.com",      identifiant: "FrancoisP",  role: "redacteur",  motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u10", nom: "Awa Kouyate",       email: "eva.koya@gmail.com",               identifiant: "AwaK",       role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u11", nom: "Frédéric Gasset",   email: "fredindy@orange.fr",               identifiant: "FredericG",  role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
-  { id: "u12", nom: "Céline Boivin",     email: "",                                 identifiant: "CelineB",    role: "inactif",    motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u13", nom: "Denis Boivin",      email: "denis.boivin89@gmail.com",         identifiant: "DenisB",     role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u14", nom: "Flavie Maison",     email: "flavie.maison@hotmail.fr",         identifiant: "FlavieM",    role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },
   { id: "u15", nom: "Quentin Bellanger", email: "quentin.bellanger89@gmail.com",    identifiant: "QuentinB",   role: "conseiller", motDePasse: "Pourrain2026!", motDePasseTemporaire: true },

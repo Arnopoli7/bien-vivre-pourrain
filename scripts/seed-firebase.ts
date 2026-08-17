@@ -61,7 +61,6 @@ const users = [
   { id: "u9",  nom: "François Petit",    email: "f.petit@pourrain.fr",      role: "conseiller", motDePasse: "conseil2024" },
   { id: "u10", nom: "Awa Kouyate",       email: "a.kouyate@pourrain.fr",    role: "conseiller", motDePasse: "conseil2024" },
   { id: "u11", nom: "Frédéric Gasset",   email: "f.gasset@pourrain.fr",     role: "conseiller", motDePasse: "conseil2024" },
-  { id: "u12", nom: "Céline Boivin",     email: "c.boivin@pourrain.fr",     role: "conseiller", motDePasse: "conseil2024" },
   { id: "u13", nom: "Denis Boivin",      email: "d.boivin@pourrain.fr",     role: "conseiller", motDePasse: "conseil2024" },
   { id: "u14", nom: "Flavie Maison",     email: "fl.maison@pourrain.fr",    role: "conseiller", motDePasse: "conseil2024" },
   { id: "u15", nom: "Quentin Bellanger", email: "q.bellanger@pourrain.fr",  role: "conseiller", motDePasse: "conseil2024" },
