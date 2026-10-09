@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useApp } from "@/lib/app-context"
-import { lireComptesRendus, supprimerCompteRendu } from "@/lib/comptes-rendus"
-import { supprimerDocumentsParCompteRenduId, toggleArchiveCompteRendu } from "@/lib/firebase/firestore"
+import { lireComptesRendus, sauvegarderCompteRendu, supprimerCompteRendu } from "@/lib/comptes-rendus"
+import { supprimerDocumentsParCompteRenduId, toggleArchiveCompteRendu, documentExistePourCompteRendu } from "@/lib/firebase/firestore"
 import type { CompteRendu } from "@/types"
 import { getMembresCommission, getSuppleantsCommission, getSuppleantCommissions } from "@/lib/commission-membres"
 
@@ -25,7 +25,7 @@ function TableHead({ blue = false }: { blue?: boolean }) {
 }
 
 export default function NotesPage() {
-  const { currentUser, commissions, supprimerDocument } = useApp()
+  const { currentUser, commissions, supprimerDocument, ajouterDocument, users } = useApp()
   const [crs, setCrs] = useState<CompteRendu[]>([])
   const [vue, setVue] = useState<"principale" | "archives">("principale")
 
@@ -70,6 +70,38 @@ export default function NotesPage() {
     setCrs(prev => prev.map(cr => cr.id === id ? { ...cr, archive: false } : cr))
   }
 
+  async function handleValider(id: string) {
+    const cr = crs.find(c => c.id === id)
+    if (!cr) return
+    const commission = commissions.find(c => c.id === cr.commissionId)
+    const crValide: CompteRendu = { ...cr, statut: "valide" }
+    await sauvegarderCompteRendu(crValide)
+    const dejaExiste = await documentExistePourCompteRendu(crValide.id)
+    if (!dejaExiste) {
+      const annexesCr = crValide.annexes ?? []
+      const auteurUser = users.find(u => u.nom === crValide.redacteur)
+      await ajouterDocument({
+        id: `doc-cr-${crValide.id}`,
+        titre: crValide.titre || "Sans titre",
+        commissionId: crValide.commissionId || "",
+        commission: commission?.nom || "",
+        annee: crValide.annee,
+        mois: crValide.mois,
+        date: crValide.date || "",
+        auteur: crValide.redacteur || "",
+        auteurId: auteurUser?.id || "",
+        fichiers: annexesCr,
+        type: "compte_rendu",
+        statut: "valide",
+        compteRenduId: crValide.id || "",
+        nbAnnexes: annexesCr.length || 0,
+        validepar: currentUser?.nom || "",
+        valideAt: new Date().toISOString(),
+      })
+    }
+    setCrs(prev => prev.map(c => c.id === id ? { ...c, statut: "valide" } : c))
+  }
+
   async function handleSupprimer(id: string) {
     if (!window.confirm("Voulez-vous supprimer ce compte rendu ?")) return
     await supprimerCompteRendu(id)
@@ -79,12 +111,14 @@ export default function NotesPage() {
   }
 
   function peutVoir(c: CompteRendu): boolean {
+    // CRs sans statut = considérés comme validés (rétrocompat)
+    if (!c.statut) {
+      if (c.commissionId === REUNION_MA_ID) return MEMBRES_REUNION_MA.includes(userNom)
+      return true
+    }
     if (c.statut === "brouillon") {
-      if (isMaire) return true
-      if (isAdjoint) return c.redacteur === userNom
-      if (isRedacteur) return c.redacteur === userNom || getMembresCommission(c.commissionId).includes(userNom)
-      if (getSuppleantsCommission(c.commissionId).includes(userNom)) return true
-      return getMembresCommission(c.commissionId).includes(userNom)
+      // Visible uniquement par l'auteur et le maire
+      return isMaire || c.redacteur === userNom
     }
     if (c.statut === "en_attente") {
       if (isMaire) return true
@@ -165,12 +199,12 @@ export default function NotesPage() {
             </div>
           )}
 
-          {/* Brouillons */}
+          {/* Brouillons — visibles uniquement par l'auteur et le maire */}
           {brouillons.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
                 <span className="inline-block px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-600">
-                  Brouillon
+                  {isMaire ? "Comptes rendus à valider" : "Brouillon"}
                 </span>
                 <span className="text-sm text-gray-500">{brouillons.length} document{brouillons.length !== 1 ? "s" : ""}</span>
               </div>
@@ -190,6 +224,7 @@ export default function NotesPage() {
                           cr={cr}
                           commissions={commissions}
                           currentUser={currentUser}
+                          onValider={isMaire ? handleValider : undefined}
                           onSupprimer={canDeleteThis ? handleSupprimer : undefined}
                           onArchiver={canWrite ? handleArchiver : undefined}
                         />
@@ -364,6 +399,7 @@ function CRRow({
   cr,
   commissions,
   currentUser,
+  onValider,
   onSupprimer,
   onArchiver,
   onRestaurer,
@@ -371,6 +407,7 @@ function CRRow({
   cr: CompteRendu
   commissions: { id: string; nom: string }[]
   currentUser: { id: string; nom: string; role: string } | null
+  onValider?: (id: string) => void
   onSupprimer?: (id: string) => void
   onArchiver?: (id: string) => void
   onRestaurer?: (id: string) => void
@@ -416,6 +453,14 @@ function CRRow({
           >
             {linkLabel}
           </Link>
+          {onValider && (
+            <button
+              onClick={() => onValider(cr.id)}
+              className="text-xs px-3 py-1.5 rounded-lg bg-[#5FAF5A] hover:bg-[#4a8f46] text-white font-semibold transition-colors"
+            >
+              Valider
+            </button>
+          )}
           {onRestaurer && (
             <button
               onClick={() => onRestaurer(cr.id)}

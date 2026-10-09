@@ -12,7 +12,7 @@ import type { CompteRendu, Fichier } from "@/types"
 import { formatFileSize, getFileColorClass } from "@/lib/utils"
 import BoutonTelechargement from "@/components/ui/BoutonTelechargement"
 import { telechargerCompteRenduPDF } from "@/lib/generer-pdf-cr"
-import { getMembresCommission, getSuppleantsCommission } from "@/lib/commission-membres"
+import { getSuppleantsCommission } from "@/lib/commission-membres"
 
 const MOIS_FR = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -108,23 +108,18 @@ export default function CompteRenduDetailPage({ params }: PageProps) {
     )
   }
 
-  // ── BROUILLON non-éditable : membres + suppléants de la commission uniquement ──────────
+  // ── BROUILLON non-éditable : accès interdit sauf auteur et maire ──────────
+  // (Le maire a toujours canEdit=true pour les brouillons, donc ce bloc bloque tous les autres)
   if (cr.statut === "brouillon" && !canEdit) {
-    const membres = getMembresCommission(cr.commissionId)
-    const suppleants = getSuppleantsCommission(cr.commissionId)
-    const isMembre = membres.includes(currentUser?.nom ?? "") || suppleants.includes(currentUser?.nom ?? "")
-    if (!isMembre) {
-      return (
-        <div className="max-w-4xl mx-auto py-20 text-center space-y-4">
-          <p className="text-4xl">🔒</p>
-          <p className="text-gray-500 text-sm">Vous n'avez pas accès à ce compte rendu.</p>
-          <Link href="/notes" className="text-sm text-[#B4432E] underline">
-            Retour à la liste
-          </Link>
-        </div>
-      )
-    }
-    // Membre ou suppléant de la commission : lecture seule, pas de boutons d'action
+    return (
+      <div className="max-w-4xl mx-auto py-20 text-center space-y-4">
+        <p className="text-4xl">🔒</p>
+        <p className="text-gray-500 text-sm">Vous n'avez pas accès à ce compte rendu.</p>
+        <Link href="/notes" className="text-sm text-[#B4432E] underline">
+          Retour à la liste
+        </Link>
+      </div>
+    )
   }
 
   // Vrai si l'utilisateur est membre de la commission (non-rédacteur) qui consulte un brouillon

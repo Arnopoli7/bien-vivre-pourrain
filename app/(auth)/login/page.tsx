@@ -3,7 +3,7 @@
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { getUserByCredentials } from "@/lib/firebase/firestore"
+import { getUserByCredentials, logConnexion } from "@/lib/firebase/firestore"
 import { useApp } from "@/lib/app-context"
 
 export default function LoginPage() {
@@ -23,6 +23,7 @@ export default function LoginPage() {
       if (user) {
         localStorage.setItem("bvap_session", "true")
         loginUser(user)
+        logConnexion(user.id, user.nom).catch(console.error)
         router.push("/dashboard")
       } else {
         setErreur("Identifiant ou mot de passe incorrect")

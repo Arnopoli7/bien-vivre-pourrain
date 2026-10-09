@@ -7,6 +7,7 @@ import {
   setDoc,
   deleteField,
   getDoc,
+  addDoc,
   query,
   where,
 } from "firebase/firestore"
@@ -257,4 +258,27 @@ export async function getAcces(): Promise<AccesCommissions> {
 
 export async function saveAcces(acces: AccesCommissions): Promise<void> {
   await setDoc(firestoreDoc(db, "settings", "acces"), { data: acces })
+}
+
+// ── JOURNAL DES CONNEXIONS ────────────────────────────────────────────────────
+
+export interface EntreeConnexion {
+  id: string
+  userId: string
+  nom: string
+  dateHeure: string
+}
+
+export async function logConnexion(userId: string, nom: string): Promise<void> {
+  await addDoc(collection(db, "connexions"), {
+    userId,
+    nom,
+    dateHeure: new Date().toISOString(),
+  })
+}
+
+export async function getConnexions(): Promise<EntreeConnexion[]> {
+  const snap = await getDocs(collection(db, "connexions"))
+  const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }) as EntreeConnexion)
+  return entries.sort((a, b) => b.dateHeure.localeCompare(a.dateHeure))
 }
