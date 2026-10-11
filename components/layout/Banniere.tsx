@@ -4,14 +4,23 @@ import { useEffect, useState } from "react"
 import { onSnapshot, doc } from "firebase/firestore"
 import { db } from "@/lib/firebase/config"
 import type { BanniereConfig } from "@/lib/firebase/firestore"
+import { getThemeActif } from "@/lib/calendrier-themes"
 
 const couleurClasses: Record<string, string> = {
-  rose:   "bg-pink-100 border-pink-300 text-pink-800",
-  bleu:   "bg-blue-100 border-blue-300 text-blue-800",
-  vert:   "bg-green-100 border-green-300 text-green-800",
-  jaune:  "bg-yellow-100 border-yellow-300 text-yellow-800",
-  rouge:  "bg-red-100 border-red-300 text-red-800",
-  violet: "bg-purple-100 border-purple-300 text-purple-800",
+  // Couleurs bannière manuelle
+  rose:              "bg-pink-100 border-pink-300 text-pink-800",
+  bleu:              "bg-blue-100 border-blue-300 text-blue-800",
+  vert:              "bg-green-100 border-green-300 text-green-800",
+  jaune:             "bg-yellow-100 border-yellow-300 text-yellow-800",
+  rouge:             "bg-red-100 border-red-300 text-red-800",
+  violet:            "bg-purple-100 border-purple-300 text-purple-800",
+  // Couleurs calendrier thèmes
+  dore:              "bg-amber-100 border-amber-300 text-amber-900",
+  pastel:            "bg-lime-50 border-lime-300 text-lime-800",
+  multicolore:       "bg-violet-100 border-violet-300 text-violet-800",
+  orange:            "bg-orange-100 border-orange-300 text-orange-800",
+  "bleu-blanc-rouge":"bg-blue-50 border-blue-400 text-blue-900",
+  "rouge-vert":      "bg-green-50 border-green-300 text-red-800",
 }
 
 export default function Banniere() {
@@ -32,34 +41,50 @@ export default function Banniere() {
     return () => unsub()
   }, [])
 
-  if (!config || !config.active) return null
-
-  // Vérification date de fin
   const today = new Date().toISOString().slice(0, 10)
-  if (config.dateFin && config.dateFin < today) return null
 
-  // Ne rien afficher s'il n'y a ni texte ni image
-  if (!config.texte.trim() && !config.imageUrl) return null
+  // Bannière manuelle prioritaire
+  const manuelleActive =
+    config !== null &&
+    config.active &&
+    !(config.dateFin && config.dateFin < today) &&
+    (config.texte.trim() || config.imageUrl)
 
-  const classes = couleurClasses[config.couleur] ?? couleurClasses.rose
+  if (manuelleActive && config) {
+    const classes = couleurClasses[config.couleur] ?? couleurClasses.rose
+    return (
+      <div className={`border-b px-4 py-2 text-sm font-medium flex items-center justify-center gap-3 ${classes}`}>
+        {config.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={config.imageUrl}
+            alt=""
+            style={{ height: "48px", width: "auto", objectFit: "contain", borderRadius: "4px" }}
+          />
+        )}
+        {config.texte.trim() && (
+          <span>
+            {config.emoji && <span className="mr-1.5">{config.emoji}</span>}
+            {config.texte}
+            {config.emoji && <span className="ml-1.5">{config.emoji}</span>}
+          </span>
+        )}
+      </div>
+    )
+  }
 
+  // Fallback : thème automatique du calendrier
+  const theme = getThemeActif()
+  if (!theme) return null
+
+  const classes = couleurClasses[theme.couleur] ?? couleurClasses.rose
   return (
     <div className={`border-b px-4 py-2 text-sm font-medium flex items-center justify-center gap-3 ${classes}`}>
-      {config.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={config.imageUrl}
-          alt=""
-          style={{ height: "48px", width: "auto", objectFit: "contain", borderRadius: "4px" }}
-        />
-      )}
-      {config.texte.trim() && (
-        <span>
-          {config.emoji && <span className="mr-1.5">{config.emoji}</span>}
-          {config.texte}
-          {config.emoji && <span className="ml-1.5">{config.emoji}</span>}
-        </span>
-      )}
+      <span>
+        <span className="mr-1.5">{theme.emoji}</span>
+        {theme.texteBanniere}
+        <span className="ml-1.5">{theme.emoji}</span>
+      </span>
     </div>
   )
 }

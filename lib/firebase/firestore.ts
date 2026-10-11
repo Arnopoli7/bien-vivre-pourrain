@@ -267,6 +267,7 @@ export interface EntreeConnexion {
   userId: string
   nom: string
   dateHeure: string
+  type?: "connexion" | "visite"
 }
 
 export async function logConnexion(userId: string, nom: string): Promise<void> {
@@ -274,6 +275,16 @@ export async function logConnexion(userId: string, nom: string): Promise<void> {
     userId,
     nom,
     dateHeure: new Date().toISOString(),
+    type: "connexion",
+  })
+}
+
+export async function logVisite(userId: string, nom: string): Promise<void> {
+  await addDoc(collection(db, "connexions"), {
+    userId,
+    nom,
+    dateHeure: new Date().toISOString(),
+    type: "visite",
   })
 }
 

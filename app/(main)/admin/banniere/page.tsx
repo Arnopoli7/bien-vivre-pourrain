@@ -4,6 +4,21 @@ import { useState, useEffect, useRef } from "react"
 import { useApp } from "@/lib/app-context"
 import { getBanniere, saveBanniere, type BanniereConfig } from "@/lib/firebase/firestore"
 import { uploadFichier } from "@/lib/supabase-storage"
+import { CALENDRIER_THEMES, getThemeActif } from "@/lib/calendrier-themes"
+
+const COULEURS_CALENDRIER: Record<string, string> = {
+  rose:              "bg-pink-200",
+  bleu:              "bg-blue-200",
+  vert:              "bg-green-200",
+  rouge:             "bg-red-200",
+  violet:            "bg-purple-200",
+  dore:              "bg-amber-200",
+  pastel:            "bg-lime-200",
+  multicolore:       "bg-violet-200",
+  orange:            "bg-orange-200",
+  "bleu-blanc-rouge":"bg-blue-100",
+  "rouge-vert":      "bg-green-100",
+}
 
 const COULEURS: Array<{ id: string; label: string; preview: string }> = [
   { id: "rose",   label: "Rose",   preview: "bg-pink-200" },
@@ -29,6 +44,58 @@ function formatDateFR(iso: string): string {
   if (!iso) return ""
   const [y, m, d] = iso.split("-")
   return `${d}/${m}/${y}`
+}
+
+function formatMMDD(mmdd: string): string {
+  const [m, d] = mmdd.split("-")
+  return `${d}/${m}`
+}
+
+function CalendrierThemes() {
+  const themeActif = getThemeActif()
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+      <div>
+        <h2 className="text-base font-semibold text-[#1A1A1A]">Calendrier des thèmes automatiques</h2>
+        <p className="text-xs text-gray-400 mt-0.5">
+          S'affiche automatiquement dans la bannière (toutes les pages) et sur la page d'accueil lorsqu'aucune bannière manuelle n'est active.
+          Les dates mobiles (Nouvel An chinois, Carnaval, Pâques) sont à mettre à jour chaque année dans <code className="bg-gray-100 px-1 rounded text-[11px]">lib/calendrier-themes.ts</code>.
+        </p>
+      </div>
+
+      <div className="divide-y divide-gray-50">
+        {CALENDRIER_THEMES.map(t => {
+          const estActif = themeActif?.id === t.id
+          return (
+            <div
+              key={t.id}
+              className={`flex items-center gap-3 py-2.5 ${estActif ? "bg-[#FFF8E8] -mx-2 px-2 rounded-lg" : ""}`}
+            >
+              <span
+                className={`w-3 h-3 rounded-full flex-shrink-0 ${COULEURS_CALENDRIER[t.couleur] ?? "bg-gray-200"}`}
+              />
+              <span className="text-base w-6 text-center flex-shrink-0">{t.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-[#1A1A1A]">{t.nom}</span>
+                <span className="text-xs text-gray-400 ml-2">
+                  {formatMMDD(t.debut)} → {formatMMDD(t.fin)}
+                </span>
+              </div>
+              <span className="text-xs text-gray-400 truncate max-w-[180px] hidden sm:block">
+                {t.texteBanniere}
+              </span>
+              {estActif && (
+                <span className="flex-shrink-0 text-xs font-semibold bg-[#B4432E] text-white px-2 py-0.5 rounded-full">
+                  Actif aujourd'hui
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 export default function BannierePage() {
@@ -374,6 +441,9 @@ export default function BannierePage() {
               </span>
             )}
           </div>
+
+          {/* Calendrier des thèmes automatiques */}
+          <CalendrierThemes />
         </>
       )}
     </div>

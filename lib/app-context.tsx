@@ -25,6 +25,7 @@ import {
   saveAcces,
   getComptesRendus,
   supprimerCompteRenduFirestore,
+  logVisite,
 } from "@/lib/firebase/firestore"
 
 const MAX_TENTATIVES = 3
@@ -182,6 +183,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const userId = typeof window !== "undefined" ? localStorage.getItem("bvap_user_id") : null
         const found = userId ? usersData.find(u => u.id === userId) : null
         setCurrentUser(found ?? usersData[0] ?? null)
+
+        // Enregistre une visite une fois par jour pour les utilisateurs déjà connectés
+        if (found && typeof window !== "undefined") {
+          const visitKey = `bvap_visite_${found.id}`
+          const today = new Date().toISOString().slice(0, 10)
+          if (localStorage.getItem(visitKey) !== today) {
+            logVisite(found.id, found.nom).catch(console.error)
+            localStorage.setItem(visitKey, today)
+          }
+        }
 
         // Succès — réinitialiser l'indicateur d'échec
         setConnexionEchouee(false)

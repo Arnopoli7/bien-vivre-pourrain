@@ -6,7 +6,23 @@ import { useApp } from "@/lib/app-context"
 import { commissionColors } from "@/lib/commission-colors"
 import { getComptesRendus } from "@/lib/firebase/firestore"
 import ChangePasswordModal from "@/components/ui/ChangePasswordModal"
+import { getThemeActif } from "@/lib/calendrier-themes"
 import type { CompteRendu } from "@/types"
+
+const themeStripClasses: Record<string, string> = {
+  rose:              "bg-pink-100 text-pink-800",
+  bleu:              "bg-blue-100 text-blue-800",
+  vert:              "bg-green-100 text-green-800",
+  jaune:             "bg-yellow-100 text-yellow-800",
+  rouge:             "bg-red-100 text-red-800",
+  violet:            "bg-purple-100 text-purple-800",
+  dore:              "bg-amber-100 text-amber-900",
+  pastel:            "bg-lime-50 text-lime-800",
+  multicolore:       "bg-violet-100 text-violet-800",
+  orange:            "bg-orange-100 text-orange-800",
+  "bleu-blanc-rouge":"bg-blue-50 text-blue-900",
+  "rouge-vert":      "bg-green-50 text-red-800",
+}
 
 const roleLabels: Record<string, string> = {
   maire:      "Maire",
@@ -29,6 +45,8 @@ export default function DashboardPage() {
       setShowPasswordModal(true)
     }
   }, [currentUser])
+
+  const themeActif = getThemeActif()
 
   const now = new Date()
   const todayISO = now.toISOString().slice(0, 10)
@@ -59,6 +77,15 @@ export default function DashboardPage() {
           onClose={() => setShowPasswordModal(false)}
           onUpdate={updateUser}
         />
+      )}
+
+      {/* Strip thème saisonnier */}
+      {themeActif && (
+        <div className={`rounded-xl px-5 py-3 text-sm font-semibold text-center ${themeStripClasses[themeActif.couleur] ?? "bg-gray-100 text-gray-800"}`}>
+          <span className="mr-2 text-base">{themeActif.emoji}</span>
+          {themeActif.texteBanniere}
+          <span className="ml-2 text-base">{themeActif.emoji}</span>
+        </div>
       )}
 
       {/* Bannières réunions dans moins de 48h */}
