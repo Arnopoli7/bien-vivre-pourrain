@@ -3,9 +3,9 @@ import { app } from "./config"
 
 const storage = getStorage(app)
 
-export async function uploadFichier(file: File): Promise<{ url: string }> {
+export async function uploadFichier(file: File, dossier = "documents"): Promise<{ url: string }> {
   const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`
-  const storageRef = ref(storage, `documents/${fileName}`)
+  const storageRef = ref(storage, `${dossier}/${fileName}`)
 
   await uploadBytes(storageRef, file)
   const url = await getDownloadURL(storageRef)

@@ -32,15 +32,34 @@ export default function Banniere() {
     return () => unsub()
   }, [])
 
-  if (!config || !config.active || !config.texte.trim()) return null
+  if (!config || !config.active) return null
+
+  // Vérification date de fin
+  const today = new Date().toISOString().slice(0, 10)
+  if (config.dateFin && config.dateFin < today) return null
+
+  // Ne rien afficher s'il n'y a ni texte ni image
+  if (!config.texte.trim() && !config.imageUrl) return null
 
   const classes = couleurClasses[config.couleur] ?? couleurClasses.rose
 
   return (
-    <div className={`border-b px-4 py-2.5 text-sm font-medium text-center ${classes}`}>
-      {config.emoji && <span className="mr-1.5">{config.emoji}</span>}
-      {config.texte}
-      {config.emoji && <span className="ml-1.5">{config.emoji}</span>}
+    <div className={`border-b px-4 py-2 text-sm font-medium flex items-center justify-center gap-3 ${classes}`}>
+      {config.imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={config.imageUrl}
+          alt=""
+          style={{ height: "48px", width: "auto", objectFit: "contain", borderRadius: "4px" }}
+        />
+      )}
+      {config.texte.trim() && (
+        <span>
+          {config.emoji && <span className="mr-1.5">{config.emoji}</span>}
+          {config.texte}
+          {config.emoji && <span className="ml-1.5">{config.emoji}</span>}
+        </span>
+      )}
     </div>
   )
 }

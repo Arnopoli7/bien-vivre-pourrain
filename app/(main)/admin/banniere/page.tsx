@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useApp } from "@/lib/app-context"
 import { getBanniere, saveBanniere, type BanniereConfig } from "@/lib/firebase/firestore"
+import { uploadFichier } from "@/lib/supabase-storage"
 
 const COULEURS: Array<{ id: string; label: string; preview: string }> = [
   { id: "rose",   label: "Rose",   preview: "bg-pink-200" },
@@ -15,6 +16,21 @@ const COULEURS: Array<{ id: string; label: string; preview: string }> = [
 
 const EMOJIS_RAPIDES = ["🎀", "⚠️", "📢", "ℹ️", "🎉", "🌸", "🔔", "🏛️", "⭐", "❄️"]
 
+const previewClasses: Record<string, string> = {
+  rose:   "bg-pink-100 border-pink-300 text-pink-800",
+  bleu:   "bg-blue-100 border-blue-300 text-blue-800",
+  vert:   "bg-green-100 border-green-300 text-green-800",
+  jaune:  "bg-yellow-100 border-yellow-300 text-yellow-800",
+  rouge:  "bg-red-100 border-red-300 text-red-800",
+  violet: "bg-purple-100 border-purple-300 text-purple-800",
+}
+
+function formatDateFR(iso: string): string {
+  if (!iso) return ""
+  const [y, m, d] = iso.split("-")
+  return `${d}/${m}/${y}`
+}
+
 export default function BannierePage() {
   const { currentUser } = useApp()
   const isAdmin = currentUser?.identifiant === "ArnaudP"
@@ -24,10 +40,14 @@ export default function BannierePage() {
     texte: "",
     emoji: "🎀",
     couleur: "rose",
+    imageUrl: "",
+    dateFin: "",
   })
   const [chargement, setChargement] = useState(true)
   const [sauvegarde, setSauvegarde] = useState(false)
+  const [uploadEnCours, setUploadEnCours] = useState(false)
   const [message, setMessage] = useState("")
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!isAdmin) return
@@ -47,6 +67,9 @@ export default function BannierePage() {
     )
   }
 
+  const today = new Date().toISOString().slice(0, 10)
+  const estExpiree = !!config.dateFin && config.dateFin < today
+
   async function handleSauvegarder() {
     setSauvegarde(true)
     try {
@@ -61,14 +84,28 @@ export default function BannierePage() {
     }
   }
 
-  const previewClasses: Record<string, string> = {
-    rose:   "bg-pink-100 border-pink-300 text-pink-800",
-    bleu:   "bg-blue-100 border-blue-300 text-blue-800",
-    vert:   "bg-green-100 border-green-300 text-green-800",
-    jaune:  "bg-yellow-100 border-yellow-300 text-yellow-800",
-    rouge:  "bg-red-100 border-red-300 text-red-800",
-    violet: "bg-purple-100 border-purple-300 text-purple-800",
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadEnCours(true)
+    setMessage("")
+    try {
+      const { url } = await uploadFichier(file, "banniere")
+      setConfig(prev => ({ ...prev, imageUrl: url }))
+    } catch (err) {
+      console.error(err)
+      setMessage("Erreur lors du téléversement de l'image.")
+    } finally {
+      setUploadEnCours(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
   }
+
+  function handleRetirerImage() {
+    setConfig(prev => ({ ...prev, imageUrl: "" }))
+  }
+
+  const hasContent = config.texte.trim() || config.imageUrl
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -84,22 +121,51 @@ export default function BannierePage() {
       ) : (
         <>
           {/* Aperçu */}
-          {config.texte.trim() && (
-            <div className={`rounded-xl border px-4 py-3 text-sm font-medium text-center ${previewClasses[config.couleur] ?? previewClasses.rose}`}>
-              <span className="text-xs font-semibold uppercase tracking-wider opacity-60 block mb-1">Aperçu</span>
-              {config.emoji && <span className="mr-1.5">{config.emoji}</span>}
-              {config.texte}
-              {config.emoji && <span className="ml-1.5">{config.emoji}</span>}
+          {hasContent && (
+            <div className={`rounded-xl border px-4 py-3 text-sm font-medium ${previewClasses[config.couleur] ?? previewClasses.rose}`}>
+              <span className="text-xs font-semibold uppercase tracking-wider opacity-60 block mb-2 text-center">Aperçu</span>
+              <div className="flex items-center justify-center gap-3">
+                {config.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={config.imageUrl}
+                    alt=""
+                    style={{ height: "48px", width: "auto", objectFit: "contain", borderRadius: "4px" }}
+                  />
+                )}
+                {config.texte.trim() && (
+                  <span>
+                    {config.emoji && <span className="mr-1.5">{config.emoji}</span>}
+                    {config.texte}
+                    {config.emoji && <span className="ml-1.5">{config.emoji}</span>}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Alerte expiration */}
+          {estExpiree && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm">
+              <span className="text-lg">⏰</span>
+              <span>
+                Bannière expirée le <strong>{formatDateFR(config.dateFin!)}</strong>. Elle n'est plus affichée même si l'interrupteur est actif.
+              </span>
             </div>
           )}
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-5">
-            {/* Interrupteur actif / inactif */}
+
+            {/* Interrupteur */}
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-[#1A1A1A]">Bannière active</p>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {config.active ? "Visible par tous les élus connectés." : "Non affichée sur le site."}
+                  {config.active && !estExpiree
+                    ? "Visible par tous les élus connectés."
+                    : estExpiree
+                    ? "Expirée — non affichée."
+                    : "Non affichée sur le site."}
                 </p>
               </div>
               <button
@@ -192,13 +258,112 @@ export default function BannierePage() {
                 ))}
               </div>
             </div>
+
+            <hr className="border-gray-100" />
+
+            {/* Image */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Image (optionnelle)
+              </label>
+              {config.imageUrl ? (
+                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={config.imageUrl}
+                    alt="Aperçu"
+                    style={{ height: "56px", width: "auto", objectFit: "contain", borderRadius: "6px" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 truncate">Image téléversée</p>
+                  </div>
+                  <button
+                    onClick={handleRetirerImage}
+                    className="text-sm text-[#B4432E] hover:underline font-medium shrink-0"
+                  >
+                    Retirer
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="banniere-image-input"
+                  />
+                  <label
+                    htmlFor="banniere-image-input"
+                    className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dashed border-gray-300 hover:border-[#B4432E] text-sm text-gray-500 hover:text-[#B4432E] cursor-pointer transition-colors ${
+                      uploadEnCours ? "opacity-60 pointer-events-none" : ""
+                    }`}
+                  >
+                    {uploadEnCours ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        Téléversement…
+                      </>
+                    ) : (
+                      <>
+                        <span>🖼️</span>
+                        Choisir une image (JPG, PNG…)
+                      </>
+                    )}
+                  </label>
+                  <p className="text-xs text-gray-400">Affichée à côté du texte dans la bannière</p>
+                </div>
+              )}
+            </div>
+
+            <hr className="border-gray-100" />
+
+            {/* Date de fin */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Date de fin (optionnelle)
+              </label>
+              <div className="flex items-center gap-3 flex-wrap">
+                <input
+                  type="date"
+                  value={config.dateFin ?? ""}
+                  onChange={e => setConfig(prev => ({ ...prev, dateFin: e.target.value }))}
+                  min={today}
+                  className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#B4432E]/20 focus:border-[#B4432E]"
+                />
+                {config.dateFin && (
+                  <button
+                    onClick={() => setConfig(prev => ({ ...prev, dateFin: "" }))}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1"
+                  >
+                    Supprimer la date
+                  </button>
+                )}
+              </div>
+              {config.dateFin && !estExpiree && (
+                <p className="text-xs text-gray-400 mt-1.5">
+                  La bannière se masquera automatiquement après le <strong>{formatDateFR(config.dateFin)}</strong>.
+                </p>
+              )}
+              {estExpiree && (
+                <p className="text-xs text-amber-600 font-medium mt-1.5">
+                  ⏰ Expirée le {formatDateFR(config.dateFin!)} — non affichée sur le site.
+                </p>
+              )}
+              {!config.dateFin && (
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Sans date de fin, la bannière reste affichée tant que l'interrupteur est actif.
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-4">
             <button
               onClick={handleSauvegarder}
-              disabled={sauvegarde}
+              disabled={sauvegarde || uploadEnCours}
               className="px-6 py-3 bg-[#B4432E] hover:bg-[#8B3222] disabled:opacity-60 text-white font-semibold rounded-xl transition-colors text-sm"
             >
               {sauvegarde ? "Enregistrement…" : "Enregistrer"}

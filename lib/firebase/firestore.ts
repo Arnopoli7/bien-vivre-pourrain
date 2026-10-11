@@ -290,6 +290,8 @@ export interface BanniereConfig {
   texte: string
   emoji: string
   couleur: string
+  imageUrl?: string  // URL Firebase Storage, optionnelle
+  dateFin?: string   // format YYYY-MM-DD, optionnelle
 }
 
 const BANNIERE_DEFAUT: BanniereConfig = {
@@ -297,6 +299,8 @@ const BANNIERE_DEFAUT: BanniereConfig = {
   texte: "",
   emoji: "🎀",
   couleur: "rose",
+  imageUrl: "",
+  dateFin: "",
 }
 
 export async function getBanniere(): Promise<BanniereConfig> {
