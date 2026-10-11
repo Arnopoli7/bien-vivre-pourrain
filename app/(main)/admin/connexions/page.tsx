@@ -35,6 +35,14 @@ export default function ConnexionsPage() {
     ? connexions
     : connexions.filter(c => c.nom.toLowerCase().includes(filtre.toLowerCase()))
 
+  // Statistiques par utilisateur pour le graphique
+  const statsParUser = connexions.reduce<Record<string, number>>((acc, c) => {
+    acc[c.nom] = (acc[c.nom] ?? 0) + 1
+    return acc
+  }, {})
+  const statsTriees = Object.entries(statsParUser).sort(([, a], [, b]) => b - a)
+  const maxConnexions = statsTriees[0]?.[1] ?? 1
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
@@ -43,6 +51,44 @@ export default function ConnexionsPage() {
           {chargement ? "Chargement…" : `${connexions.length} connexion${connexions.length !== 1 ? "s" : ""} enregistrée${connexions.length !== 1 ? "s" : ""}`}
         </p>
       </div>
+
+      {/* Graphique en barres */}
+      {!chargement && statsTriees.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">
+            Connexions par utilisateur
+          </h2>
+          <div className="flex items-end gap-3 overflow-x-auto pb-2" style={{ minHeight: "160px" }}>
+            {statsTriees.map(([nom, count]) => {
+              const hauteurPct = Math.round((count / maxConnexions) * 100)
+              const prenom = nom.split(" ")[0]
+              return (
+                <div
+                  key={nom}
+                  className="flex flex-col items-center gap-1 flex-shrink-0"
+                  style={{ minWidth: "52px" }}
+                >
+                  {/* Chiffre au-dessus */}
+                  <span className="text-xs font-bold text-[#B4432E]">{count}</span>
+                  {/* Barre */}
+                  <div
+                    className="w-9 rounded-t-md bg-[#B4432E] transition-all"
+                    style={{ height: `${Math.max(hauteurPct, 4)}px`, maxHeight: "120px", minHeight: "4px" }}
+                    title={`${nom} : ${count} connexion${count > 1 ? "s" : ""}`}
+                  />
+                  {/* Nom */}
+                  <span
+                    className="text-[10px] text-gray-500 text-center leading-tight mt-0.5"
+                    style={{ maxWidth: "52px", wordBreak: "break-word" }}
+                  >
+                    {prenom}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Filtre par nom */}
       <div className="relative">

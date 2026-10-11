@@ -21,6 +21,7 @@ const navItems: Array<{ href: string; label: string; icon: string; roles: string
   { href: "/search",         label: "Recherche",         icon: "🔍",  roles: ROLES_BASE },
   { href: "/admin",          label: "Administration",    icon: "⚙️", roles: ["adjoint"], identifiant: "ArnaudP" },
   { href: "/admin/connexions", label: "Journal connexions", icon: "🔌", roles: ["adjoint"], identifiant: "ArnaudP" },
+  { href: "/admin/banniere",   label: "Bannière",           icon: "📢", roles: ["adjoint"], identifiant: "ArnaudP" },
   { href: "/presence-elus",  label: "Présence Élus",     icon: "📊",  roles: ["maire", "adjoint", "conseiller"] },
   { href: "/corbeille",      label: "Corbeille",         icon: "🗑️", roles: ["maire", "adjoint"] },
 ]

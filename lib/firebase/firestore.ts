@@ -282,3 +282,29 @@ export async function getConnexions(): Promise<EntreeConnexion[]> {
   const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }) as EntreeConnexion)
   return entries.sort((a, b) => b.dateHeure.localeCompare(a.dateHeure))
 }
+
+// ── BANNIÈRE PROVISOIRE ───────────────────────────────────────────────────────
+
+export interface BanniereConfig {
+  active: boolean
+  texte: string
+  emoji: string
+  couleur: string
+}
+
+const BANNIERE_DEFAUT: BanniereConfig = {
+  active: false,
+  texte: "",
+  emoji: "🎀",
+  couleur: "rose",
+}
+
+export async function getBanniere(): Promise<BanniereConfig> {
+  const snap = await getDoc(firestoreDoc(db, "settings", "banniere"))
+  if (!snap.exists()) return BANNIERE_DEFAUT
+  return { ...BANNIERE_DEFAUT, ...snap.data() } as BanniereConfig
+}
+
+export async function saveBanniere(config: BanniereConfig): Promise<void> {
+  await setDoc(firestoreDoc(db, "settings", "banniere"), config)
+}
